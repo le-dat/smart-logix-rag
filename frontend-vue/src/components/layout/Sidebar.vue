@@ -1,6 +1,6 @@
 <script setup lang="ts">
-import { ref, onMounted } from 'vue'
-import { useRouter } from 'vue-router'
+import { ref, onMounted, onUnmounted, watch } from 'vue'
+import { useRoute, useRouter } from 'vue-router'
 import { 
   LayoutDashboard, 
   Compass, 
@@ -10,12 +10,15 @@ import {
   ChevronRight,
   Sun,
   Moon,
-  Plus
+  Plus,
+  X
 } from '@lucide/vue'
 
+const route = useRoute()
 const router = useRouter()
 const isCollapsed = ref(false)
 const isDark = ref(false)
+const isMobileOpen = ref(false)
 
 // Handle Theme Switcher
 const initTheme = () => {
@@ -49,6 +52,20 @@ const handleNewThread = () => {
   })
 }
 
+// Mobile sidebar custom events
+const handleToggleMobile = () => {
+  isMobileOpen.value = !isMobileOpen.value
+}
+
+const handleCloseMobile = () => {
+  isMobileOpen.value = false
+}
+
+// Auto-close sidebar on mobile navigation
+watch(() => route.path, () => {
+  isMobileOpen.value = false
+})
+
 onMounted(() => {
   initTheme()
   // Check if sidebar state was saved
@@ -56,6 +73,13 @@ onMounted(() => {
   if (savedSidebar === 'true') {
     isCollapsed.value = true
   }
+  window.addEventListener('toggle-mobile-sidebar', handleToggleMobile)
+  window.addEventListener('close-mobile-sidebar', handleCloseMobile)
+})
+
+onUnmounted(() => {
+  window.removeEventListener('toggle-mobile-sidebar', handleToggleMobile)
+  window.removeEventListener('close-mobile-sidebar', handleCloseMobile)
 })
 
 const toggleSidebar = () => {
@@ -65,14 +89,25 @@ const toggleSidebar = () => {
 </script>
 
 <template>
+  <!-- Mobile Backdrop overlay -->
+  <div 
+    v-if="isMobileOpen" 
+    @click="isMobileOpen = false" 
+    class="fixed inset-0 bg-black/45 backdrop-blur-[1px] z-40 md:hidden animate-in fade-in duration-200"
+  ></div>
+
+  <!-- Sidebar Container -->
   <aside 
-    class="shrink-0 glass-panel border-r border-brand-border flex flex-col justify-between hidden md:flex z-20 relative transition-all duration-300 ease-in-out bg-brand-panel"
-    :class="isCollapsed ? 'w-16' : 'w-60'"
+    class="shrink-0 glass-panel border-r border-brand-border flex flex-col justify-between z-50 fixed md:relative md:z-20 inset-y-0 left-0 transition-all duration-300 ease-in-out bg-brand-panel md:flex"
+    :class="[
+      isCollapsed ? 'md:w-16' : 'md:w-60',
+      isMobileOpen ? 'w-60 translate-x-0' : 'w-60 -translate-x-full md:translate-x-0'
+    ]"
   >
-    <!-- Collapse toggle button -->
+    <!-- Collapse toggle button (desktop only) -->
     <button 
       @click="toggleSidebar"
-      class="absolute top-7 -right-3 h-6 w-6 rounded-full border border-brand-border bg-card-bg text-text-primary flex items-center justify-center cursor-pointer shadow-sm hover:border-brand-accent transition-colors z-30"
+      class="absolute top-7 -right-3 h-6 w-6 rounded-full border border-brand-border bg-card-bg text-text-primary hidden md:flex items-center justify-center cursor-pointer shadow-sm hover:border-brand-accent transition-colors z-30"
       :aria-label="isCollapsed ? 'Expand sidebar' : 'Collapse sidebar'"
       :title="isCollapsed ? 'Expand' : 'Collapse'"
     >
@@ -81,20 +116,31 @@ const toggleSidebar = () => {
     </button>
 
     <div class="py-6 px-4 space-y-6 flex flex-col items-stretch">
-      <!-- Logo Brand -->
-      <div 
-        class="flex items-center gap-3 transition-all duration-300"
-        :class="isCollapsed ? 'justify-center' : 'px-2'"
-      >
-        <div class="h-8 w-8 rounded-lg bg-text-primary text-brand-bg flex items-center justify-center shadow-sm shrink-0">
-          <Cpu class="w-5 h-5" />
-        </div>
-        <span 
-          v-if="!isCollapsed" 
-          class="font-brand font-black tracking-widest text-base text-text-primary uppercase animate-in fade-in duration-200"
+      <!-- Logo Brand Row -->
+      <div class="flex items-center justify-between px-2">
+        <div 
+          class="flex items-center gap-3 transition-all duration-300"
+          :class="isCollapsed ? 'md:justify-center' : ''"
         >
-          SmartLogix
-        </span>
+          <div class="h-8 w-8 rounded-lg bg-text-primary text-brand-bg flex items-center justify-center shadow-sm shrink-0">
+            <Cpu class="w-5 h-5" />
+          </div>
+          <span 
+            v-if="!isCollapsed" 
+            class="font-brand font-black tracking-widest text-base text-text-primary uppercase animate-in fade-in duration-200"
+          >
+            SmartLogix
+          </span>
+        </div>
+        <!-- Mobile Close Button -->
+        <button 
+          @click="isMobileOpen = false"
+          class="md:hidden p-1.5 rounded-lg text-text-secondary hover:text-brand-accent hover:bg-brand-panel transition-colors cursor-pointer"
+          aria-label="Close menu"
+          title="Close menu"
+        >
+          <X class="w-5 h-5" />
+        </button>
       </div>
 
       <!-- New Thread Button (Perplexity Style) -->
@@ -102,7 +148,7 @@ const toggleSidebar = () => {
         @click="handleNewThread"
         class="flex items-center justify-center cursor-pointer transition-all duration-200"
         :class="isCollapsed 
-          ? 'h-9 w-9 rounded-full bg-brand-accent text-white hover:bg-emerald-600 shadow-sm shadow-emerald-500/20' 
+          ? 'md:h-9 md:w-9 md:rounded-full bg-brand-accent text-white hover:bg-emerald-600 shadow-sm shadow-emerald-500/20 w-full rounded-full py-2.5' 
           : 'btn-capsule-primary py-2.5 px-4 text-sm tracking-wider uppercase flex gap-2 font-bold w-full shadow-md shadow-brand-accent/5'"
         :title="isCollapsed ? 'New Thread' : ''"
       >
@@ -124,7 +170,7 @@ const toggleSidebar = () => {
               isActive 
                 ? 'bg-card-bg text-text-primary border border-brand-border shadow-sm' 
                 : 'text-text-secondary hover:text-text-primary border border-transparent hover:bg-text-primary/[0.02]',
-              isCollapsed ? 'justify-center p-2.5' : 'gap-3.5 px-4 py-2.5'
+              isCollapsed ? 'md:justify-center md:p-2.5' : 'gap-3.5 px-4 py-2.5'
             ]"
             :title="isCollapsed ? 'Dashboard' : ''"
           >
@@ -133,7 +179,7 @@ const toggleSidebar = () => {
           </span>
         </router-link>
 
-        <!-- Predictor Link -->
+        <!-- Risk Predictor Link -->
         <router-link 
           to="/predict" 
           v-slot="{ isActive }" 
@@ -145,7 +191,7 @@ const toggleSidebar = () => {
               isActive 
                 ? 'bg-card-bg text-text-primary border border-brand-border shadow-sm' 
                 : 'text-text-secondary hover:text-text-primary border border-transparent hover:bg-text-primary/[0.02]',
-              isCollapsed ? 'justify-center p-2.5' : 'gap-3.5 px-4 py-2.5'
+              isCollapsed ? 'md:justify-center md:p-2.5' : 'gap-3.5 px-4 py-2.5'
             ]"
             :title="isCollapsed ? 'Risk Predictor' : ''"
           >
@@ -166,7 +212,7 @@ const toggleSidebar = () => {
               isActive 
                 ? 'bg-card-bg text-text-primary border border-brand-border shadow-sm' 
                 : 'text-text-secondary hover:text-text-primary border border-transparent hover:bg-text-primary/[0.02]',
-              isCollapsed ? 'justify-center p-2.5' : 'gap-3.5 px-4 py-2.5'
+              isCollapsed ? 'md:justify-center md:p-2.5' : 'gap-3.5 px-4 py-2.5'
             ]"
             :title="isCollapsed ? 'AI Copilot' : ''"
           >
@@ -181,13 +227,13 @@ const toggleSidebar = () => {
     <div class="p-4 border-t border-brand-border space-y-4">
       <div 
         class="flex items-center"
-        :class="isCollapsed ? 'justify-center' : 'justify-between px-2'"
+        :class="isCollapsed ? 'md:justify-center' : 'justify-between px-2'"
       >
         <!-- Dynamic Switcher Pill (Perplexity-style) -->
         <button 
           @click="toggleTheme"
           class="h-8 rounded-lg flex items-center justify-center border border-brand-border bg-card-bg cursor-pointer hover:border-brand-accent transition-colors"
-          :class="isCollapsed ? 'w-8' : 'w-full gap-2 text-sm font-semibold text-text-secondary hover:text-text-primary'"
+          :class="isCollapsed ? 'md:w-8' : 'w-full gap-2 text-sm font-semibold text-text-secondary hover:text-text-primary'"
           :title="isDark ? 'Switch to Light Mode' : 'Switch to Dark Mode'"
         >
           <Sun v-if="isDark" class="w-4 h-4 text-amber-500 animate-in spin-in-12 duration-300" />
