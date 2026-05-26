@@ -79,18 +79,17 @@ onMounted(() => {
 
 // Computed circular dial parameters
 const strokeDashoffset = computed(() => {
-  if (!result.value) return 364
-  // Circumference of r=58 is 2 * pi * 58 = 364.42
+  if (!result.value) return 327
   const percent = result.value.risk_score
-  return 364 - (364 * percent)
+  return 327 - (327 * percent)
 })
 
 const dialColorClass = computed(() => {
-  if (!result.value) return 'text-slate-600'
+  if (!result.value) return 'text-slate-400'
   const level = result.value.risk_level.toLowerCase()
-  if (level === 'high') return 'text-rose-500 drop-shadow-[0_0_8px_rgba(239,68,68,0.5)]'
-  if (level === 'medium') return 'text-amber-500 drop-shadow-[0_0_8px_rgba(245,158,11,0.5)]'
-  return 'text-emerald-500 drop-shadow-[0_0_8px_rgba(16,185,129,0.5)]'
+  if (level === 'high') return 'text-rose-500'
+  if (level === 'medium') return 'text-amber-500'
+  return 'text-emerald-500'
 })
 
 // Call FastAPI backend
@@ -113,7 +112,6 @@ const handlePrediction = async () => {
     }
     
     const data = await response.json()
-    // Align with 0.0 - 1.0 internal percentage calculations and expected feature layout
     result.value = {
       risk_score: data.risk_score / 100.0,
       risk_level: data.risk_level,
@@ -126,7 +124,6 @@ const handlePrediction = async () => {
     predicted.value = true
   } catch (err: any) {
     console.error(err)
-    // High-fidelity local fallback simulation in case the python container isn't reachable or mock is preferred
     simulateFallback()
   } finally {
     loading.value = false
@@ -135,23 +132,18 @@ const handlePrediction = async () => {
 
 // Resilient Fallback Simulator
 const simulateFallback = () => {
-  // Generate high fidelity values mapping real logistics correlations
   let score = 0.15
+  if (form.value.route_id === 4) score += 0.35
+  if (form.value.weather_index > 3.5) score += 0.30
+  if (form.value.weight > 3000) score += 0.15
+  if (form.value.carrier === 'DHL Logistics') score -= 0.05
   
-  // Rule correlations
-  if (form.value.route_id === 4) score += 0.35 // PVG to LAX is long and riskier
-  if (form.value.weather_index > 3.5) score += 0.30 // Bad weather increases risk
-  if (form.value.weight > 3000) score += 0.15 // Heavy weight raises risk
-  if (form.value.carrier === 'DHL Logistics') score -= 0.05 // Solid historical record drops risk
-  
-  // Clamp score
   score = Math.min(Math.max(score, 0.05), 0.95)
   
   let level = 'Low'
   if (score > 0.65) level = 'High'
   else if (score > 0.30) level = 'Medium'
   
-  // Custom features breakdown
   const wIdx = form.value.weather_index > 3.5 ? 0.45 : 0.20
   const rIdx = form.value.route_id === 4 ? 0.35 : 0.15
   const cIdx = 0.20
@@ -166,7 +158,7 @@ const simulateFallback = () => {
     factors.push('Cross-Pacific long-haul routes exhibit higher average congestion indices.')
   }
   if (form.value.weight > 2000) {
-    factors.push('Heavy-weight freight requires complex custom container balancing checks.')
+    factors.push('Heavy-weight freight requires complex container balancing checks.')
   }
   if (factors.length === 0) {
     factors.push('Standard freight parameters meet optimal seasonal safety profiles.')
@@ -202,47 +194,47 @@ const getFeaturePercentage = (val: number) => {
 </script>
 
 <template>
-  <div class="space-y-6">
+  <div class="space-y-6 text-[#1c1b17]">
     <!-- Back Navigation -->
     <div class="flex items-center gap-3">
       <button 
         @click="router.push('/')" 
-        class="glass-card p-2 rounded-lg text-slate-400 hover:text-white flex items-center justify-center cursor-pointer transition"
+        class="glass-card p-2 rounded-lg text-slate-500 hover:text-black flex items-center justify-center cursor-pointer transition"
       >
         <ArrowLeft class="w-4 h-4" />
       </button>
-      <h2 class="text-xl font-bold text-white">Back to Dashboard</h2>
+      <h2 class="text-sm font-bold text-[#1c1b17]">Back to Dashboard</h2>
     </div>
 
     <!-- Main Container -->
     <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
       
       <!-- Left Side: Config Parameters Form -->
-      <div class="lg:col-span-5 glass-panel rounded-2xl p-6 shadow-xl space-y-5">
+      <div class="lg:col-span-5 glass-card rounded-2xl p-6 shadow-sm space-y-5">
         <div>
-          <h2 class="text-2xl font-bold text-white flex items-center gap-2">
-            <Compass class="w-6 h-6 text-indigo-400" /> AI Risk Profiler
+          <h2 class="text-xl font-extrabold text-[#1c1b17] flex items-center gap-2">
+            <Compass class="w-5.5 h-5.5 text-slate-600" /> AI Risk Profiler
           </h2>
-          <p class="text-slate-400 text-sm mt-1">Configure shipment attributes to run XGBoost diagnostics.</p>
+          <p class="text-slate-500 text-xs mt-1">Configure shipment attributes to run XGBoost diagnostics.</p>
         </div>
 
         <!-- Info alert if shipment context is loaded -->
-        <div v-if="trackingNo" class="bg-indigo-500/10 border border-indigo-500/20 rounded-xl p-3.5 flex gap-3 text-sm text-slate-300">
-          <Info class="w-5 h-5 text-indigo-400 shrink-0 mt-0.5" />
+        <div v-if="trackingNo" class="bg-[#f3f2eb] border border-[#e4e2d8] rounded-xl p-3.5 flex gap-3 text-xs text-slate-600">
+          <Info class="w-4.5 h-4.5 text-slate-600 shrink-0 mt-0.5" />
           <div>
-            <span class="font-bold text-white">Context Loaded:</span> Diagnosing shipment <span class="font-mono text-indigo-300 font-semibold">{{ trackingNo }}</span> from <span class="text-indigo-300">{{ senderName || 'Unknown' }}</span>.
+            <span class="font-bold text-[#1c1b17]">Context Loaded:</span> Diagnosing shipment <span class="font-mono text-[#1c1b17] font-semibold">{{ trackingNo }}</span> from <span class="text-[#1c1b17] font-semibold">{{ senderName || 'Unknown' }}</span>.
           </div>
         </div>
 
         <form @submit.prevent="handlePrediction" class="space-y-4">
           <!-- Route -->
           <div>
-            <label class="block text-xs font-bold uppercase tracking-wider text-slate-400 mb-1.5 flex items-center gap-1.5">
-              <Compass class="w-3.5 h-3.5" /> Route selection
+            <label class="block text-[10px] font-bold uppercase tracking-wider text-slate-500 mb-1.5 flex items-center gap-1.5">
+              <Compass class="w-3.5 h-3.5 text-slate-400" /> Route selection
             </label>
             <select 
               v-model="form.route_id" 
-              class="glass-input w-full px-3.5 py-2.5 text-sm cursor-pointer"
+              class="glass-input w-full px-3 py-2 text-xs cursor-pointer"
             >
               <option v-for="r in routes" :key="r.id" :value="r.id">
                 {{ r.name }}
@@ -252,12 +244,12 @@ const getFeaturePercentage = (val: number) => {
 
           <!-- Carrier -->
           <div>
-            <label class="block text-xs font-bold uppercase tracking-wider text-slate-400 mb-1.5 flex items-center gap-1.5">
-              <Truck class="w-3.5 h-3.5" /> Logistics Carrier
+            <label class="block text-[10px] font-bold uppercase tracking-wider text-slate-500 mb-1.5 flex items-center gap-1.5">
+              <Truck class="w-3.5 h-3.5 text-slate-400" /> Logistics Carrier
             </label>
             <select 
               v-model="form.carrier" 
-              class="glass-input w-full px-3.5 py-2.5 text-sm cursor-pointer"
+              class="glass-input w-full px-3 py-2 text-xs cursor-pointer"
             >
               <option v-for="c in carriers" :key="c" :value="c">
                 {{ c }}
@@ -267,25 +259,25 @@ const getFeaturePercentage = (val: number) => {
 
           <!-- Weight -->
           <div>
-            <label class="block text-xs font-bold uppercase tracking-wider text-slate-400 mb-1.5 flex items-center gap-1.5">
-              <Scale class="w-3.5 h-3.5" /> Net weight (kg)
+            <label class="block text-[10px] font-bold uppercase tracking-wider text-slate-500 mb-1.5 flex items-center gap-1.5">
+              <Scale class="w-3.5 h-3.5 text-slate-400" /> Net weight (kg)
             </label>
             <input 
               v-model.number="form.weight" 
               type="number" 
               step="0.01" 
               required
-              class="glass-input w-full px-3.5 py-2.5 text-sm font-mono"
+              class="glass-input w-full px-3 py-2 text-xs font-mono"
             />
           </div>
 
           <!-- Weather Index -->
           <div>
             <div class="flex justify-between items-center mb-1.5">
-              <label class="text-xs font-bold uppercase tracking-wider text-slate-400 flex items-center gap-1.5">
-                <CloudRain class="w-3.5 h-3.5" /> Weather severity index
+              <label class="text-[10px] font-bold uppercase tracking-wider text-slate-500 flex items-center gap-1.5">
+                <CloudRain class="w-3.5 h-3.5 text-slate-400" /> Weather severity index
               </label>
-              <span class="text-xs font-bold text-white font-mono bg-white/5 px-2 py-0.5 rounded">
+              <span class="text-[10px] font-bold text-[#1c1b17] font-mono bg-[#f3f2eb] px-2 py-0.5 rounded">
                 {{ form.weather_index.toFixed(1) }} / 5.0
               </span>
             </div>
@@ -295,9 +287,9 @@ const getFeaturePercentage = (val: number) => {
               min="1.0" 
               max="5.0" 
               step="0.1" 
-              class="w-full h-1.5 bg-slate-900 rounded-lg appearance-none cursor-pointer accent-indigo-500"
+              class="w-full h-1 bg-[#e4e2d8] rounded-lg appearance-none cursor-pointer accent-[#1c1b17]"
             />
-            <div class="flex justify-between text-[10px] text-slate-500 font-bold px-1 mt-1">
+            <div class="flex justify-between text-[9px] text-slate-400 font-bold px-1 mt-1 font-mono">
               <span>Optimal</span>
               <span>Moderate</span>
               <span>Severe Risk</span>
@@ -308,7 +300,7 @@ const getFeaturePercentage = (val: number) => {
           <button 
             type="submit" 
             :disabled="loading"
-            class="w-full flex items-center justify-center gap-2 bg-gradient-to-r from-indigo-600 to-indigo-500 hover:from-indigo-500 hover:to-indigo-400 text-white font-bold py-3 rounded-xl shadow-lg hover:shadow-indigo-500/25 transition duration-200 cursor-pointer disabled:opacity-50"
+            class="btn-capsule-primary w-full flex items-center justify-center gap-2 py-2.5 text-xs shadow-sm cursor-pointer disabled:opacity-50"
           >
             <RefreshCw class="w-4 h-4" :class="{ 'animate-spin': loading }" />
             {{ loading ? 'Computing XGBoost Weights...' : 'Run Diagnostics' }}
@@ -317,53 +309,53 @@ const getFeaturePercentage = (val: number) => {
       </div>
 
       <!-- Right Side: Diagnostics Explainer Dashboard -->
-      <div class="lg:col-span-7 glass-panel rounded-2xl p-6 shadow-xl flex flex-col justify-center min-h-[450px]">
+      <div class="lg:col-span-7 glass-card rounded-2xl p-6 shadow-sm flex flex-col justify-center min-h-[450px]">
         
         <!-- Welcome Screen if not predicted yet -->
         <div v-if="!predicted && !loading" class="text-center py-12 space-y-4 max-w-sm mx-auto">
-          <div class="inline-flex bg-indigo-500/10 p-5 rounded-full text-indigo-400 glow-indigo">
+          <div class="inline-flex bg-[#f3f2eb] p-5 rounded-full text-slate-500 border border-[#e4e2d8]">
             <ShieldCheck class="w-12 h-12" />
           </div>
-          <h3 class="text-xl font-extrabold text-white">Diagnostics Awaiting Run</h3>
-          <p class="text-slate-400 text-sm">
-            Select route and shipment attributes on the left panel, and click <span class="text-indigo-400 font-bold">"Run Diagnostics"</span> to evaluate logistical risks with XGBoost machine learning model.
+          <h3 class="text-lg font-extrabold text-[#1c1b17]">Diagnostics Awaiting Run</h3>
+          <p class="text-slate-500 text-xs leading-relaxed">
+            Select route and shipment attributes on the left panel, and click <span class="text-indigo-600 font-bold">"Run Diagnostics"</span> to evaluate logistical risks with XGBoost machine learning model.
           </p>
         </div>
 
         <!-- Loading Spinner -->
         <div v-if="loading" class="text-center py-12 space-y-4">
-          <div class="inline-flex animate-spin text-indigo-500">
-            <RefreshCw class="w-12 h-12" />
+          <div class="inline-flex animate-spin text-slate-700">
+            <RefreshCw class="w-10 h-10" />
           </div>
-          <h3 class="text-lg font-bold text-white">Running XGBoost Inference...</h3>
-          <p class="text-slate-500 text-sm font-medium">Extracting feature importance splits from tree nodes.</p>
+          <h3 class="text-base font-bold text-[#1c1b17]">Running XGBoost Inference...</h3>
+          <p class="text-slate-400 text-xs font-medium">Extracting feature importance splits from tree nodes.</p>
         </div>
 
         <!-- Result Content -->
         <div v-if="predicted && !loading && result" class="space-y-6 animate-in fade-in duration-300">
           
-          <div class="flex flex-col sm:flex-row items-center gap-6 border-b border-white/5 pb-6">
+          <div class="flex flex-col sm:flex-row items-center gap-6 border-b border-[#e4e2d8] pb-6">
             <!-- Dial Circular Progress -->
             <div class="relative flex items-center justify-center shrink-0">
-              <svg class="w-36 h-36 transform -rotate-90">
-                <circle cx="72" cy="72" r="58" class="text-slate-800" stroke-width="8" stroke="currentColor" fill="transparent" />
+              <svg class="w-32 h-32 transform -rotate-90">
+                <circle cx="64" cy="64" r="52" class="text-slate-100" stroke-width="6" stroke="currentColor" fill="transparent" />
                 <circle 
-                  cx="72" 
-                  cy="72" 
-                  r="58" 
+                  cx="64" 
+                  cy="64" 
+                  r="52" 
                   :class="dialColorClass" 
-                  stroke-width="8" 
+                  stroke-width="6" 
                   stroke="currentColor" 
                   fill="transparent" 
                   stroke-linecap="round"
-                  :stroke-dasharray="364"
+                  :stroke-dasharray="327"
                   :stroke-dashoffset="strokeDashoffset"
                   class="transition-all duration-1000 ease-out"
                 />
               </svg>
               <div class="absolute text-center">
-                <p class="text-3xl font-extrabold text-white font-mono">{{ Math.round(result.risk_score * 100) }}%</p>
-                <p class="text-[10px] text-slate-500 uppercase font-bold tracking-widest mt-0.5">Risk Factor</p>
+                <p class="text-2xl font-extrabold text-[#1c1b17] font-mono">{{ Math.round(result.risk_score * 100) }}%</p>
+                <p class="text-[9px] text-slate-400 uppercase font-bold tracking-widest mt-0.5">Risk Factor</p>
               </div>
             </div>
 
@@ -371,11 +363,11 @@ const getFeaturePercentage = (val: number) => {
             <div class="text-center sm:text-left space-y-2">
               <div class="flex flex-wrap items-center justify-center sm:justify-start gap-2">
                 <span 
-                  class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider"
+                  class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider"
                   :class="{
-                    'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20': result.risk_level === 'Low',
-                    'bg-amber-500/10 text-amber-400 border border-amber-500/20': result.risk_level === 'Medium',
-                    'bg-rose-500/10 text-rose-400 border border-rose-500/20': result.risk_level === 'High'
+                    'bg-emerald-100 text-emerald-800 border border-emerald-200/50': result.risk_level === 'Low',
+                    'bg-amber-100 text-amber-800 border border-amber-200/50': result.risk_level === 'Medium',
+                    'bg-rose-100 text-rose-800 border border-rose-200/50': result.risk_level === 'High'
                   }"
                 >
                   <ShieldAlert class="w-3.5 h-3.5" />
@@ -385,22 +377,22 @@ const getFeaturePercentage = (val: number) => {
                 <!-- Fallback Warning Indicator -->
                 <span 
                   v-if="result.is_fallback"
-                  class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider bg-amber-500/10 text-amber-400 border border-amber-500/25 animate-pulse"
+                  class="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[9px] font-bold uppercase tracking-wider bg-amber-100 text-amber-800 border border-amber-200/50"
                 >
                   Rule Fallback
                 </span>
               </div>
-              <h3 class="text-xl font-extrabold text-white">Risk Evaluation Matrix</h3>
-              <p class="text-slate-400 text-sm">
+              <h3 class="text-lg font-extrabold text-[#1c1b17]">Risk Evaluation Matrix</h3>
+              <p class="text-slate-500 text-xs leading-relaxed">
                 XGBoost classifier mapped safety indicators. Core factors contribute to standard operational metrics.
               </p>
             </div>
           </div>
 
-          <!-- Feature Importance Explainers -->
+          <!-- Feature Importance Explainers (Perplexity style dark gray bars) -->
           <div class="space-y-4">
-            <h4 class="text-xs font-bold uppercase tracking-wider text-slate-400 flex items-center gap-2">
-              <TrendingUp class="w-4 h-4 text-indigo-400" /> Explainable AI (SHAP Weights)
+            <h4 class="text-[10px] font-bold uppercase tracking-wider text-slate-400 flex items-center gap-2">
+              <TrendingUp class="w-4 h-4 text-slate-600" /> Explainable AI (SHAP Weights)
             </h4>
             
             <div class="space-y-3.5">
@@ -410,13 +402,13 @@ const getFeaturePercentage = (val: number) => {
                 class="space-y-1.5"
               >
                 <div class="flex justify-between items-center text-xs font-semibold">
-                  <span class="text-slate-300">{{ getFeatureLabel(key) }}</span>
-                  <span class="text-indigo-400 font-mono font-bold">{{ getFeaturePercentage(val) }}%</span>
+                  <span class="text-[#4a4943]">{{ getFeatureLabel(key) }}</span>
+                  <span class="text-[#1c1b17] font-mono font-bold">{{ getFeaturePercentage(val) }}%</span>
                 </div>
                 <!-- Visual horizontal bar -->
-                <div class="h-2 bg-slate-900 rounded-full overflow-hidden">
+                <div class="h-2 bg-[#f3f2eb] rounded-full overflow-hidden">
                   <div 
-                    class="h-full bg-gradient-to-r from-indigo-500 to-indigo-400 rounded-full transition-all duration-1000 ease-out"
+                    class="h-full bg-[#1c1b17] rounded-full transition-all duration-1000 ease-out"
                     :style="{ width: `${val * 100}%` }"
                   ></div>
                 </div>
@@ -425,9 +417,9 @@ const getFeaturePercentage = (val: number) => {
           </div>
 
           <!-- Trigger Factors -->
-          <div class="bg-slate-900/40 rounded-xl p-4 border border-white/5 space-y-2">
-            <h4 class="text-xs font-bold uppercase tracking-wider text-slate-400">Diagnosis Justifications</h4>
-            <ul class="list-disc pl-4 text-xs text-slate-300 space-y-1.5">
+          <div class="bg-[#f3f2eb]/60 rounded-xl p-4 border border-[#e4e2d8] space-y-2">
+            <h4 class="text-[10px] font-bold uppercase tracking-wider text-slate-500">Diagnosis Justifications</h4>
+            <ul class="list-disc pl-4 text-xs text-slate-600 space-y-1.5 leading-relaxed">
               <li v-for="(f, i) in result.factors" :key="i">{{ f }}</li>
             </ul>
           </div>

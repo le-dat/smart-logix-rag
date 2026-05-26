@@ -66,7 +66,6 @@ const typeMessage = (messageObj: Message, fullText: string, index = 0) => {
     messageObj.displayText += fullText.charAt(index)
     scrollToBottom()
     
-    // Adjust speed: slightly faster for longer answers, default 15ms
     const speed = fullText.length > 500 ? 8 : 15
     setTimeout(() => {
       typeMessage(messageObj, fullText, index + 1)
@@ -82,7 +81,6 @@ const handleSend = async () => {
   const prompt = promptInput.value.trim()
   if (!prompt || prompt.length < 2 || prompt.length > 1000) return
   
-  // 1. Add User Message
   const userMsgId = Date.now()
   messages.value.push({
     id: userMsgId,
@@ -96,7 +94,6 @@ const handleSend = async () => {
   loading.value = true
   scrollToBottom()
 
-  // 2. Add empty AI Message to be typed into
   const aiMsgId = Date.now() + 1
   const aiMessage: Message = {
     id: aiMsgId,
@@ -130,12 +127,10 @@ const handleSend = async () => {
     aiMessage.text = data.response
     aiMessage.citations = data.citations || []
     
-    // Trigger typewriter effect
     typeMessage(aiMessage, data.response)
     
   } catch (err: any) {
     console.error(err)
-    // Local offline RAG simulation fallback in case FastAPI container is not configured
     simulateFallback(prompt, aiMessage)
   } finally {
     loading.value = false
@@ -148,7 +143,6 @@ const simulateFallback = (prompt: string, aiMessage: Message) => {
   let answer = ""
   let citations: Citation[] = []
 
-  // High fidelity vector retrieval matching
   if (query.includes('customs') || query.includes('clearance') || query.includes('hải quan')) {
     answer = `Based on Dimerco standard procedures for **Air Freight Customs Clearance** in Taiwan (TPE) and Vietnam (SGN):\n\n1. **Standard Lead Time:** Standard customs declarations take between **4 to 8 operating hours** if paperwork (commercial invoice, packing list, certificate of origin) matches completely.\n2. **High-Risk Triggers:** Shipments exceeding **3,000 kg** or containing lithium-ion batteries are automatically flagged for physical inspection, increasing delay risk by 35%.\n3. **Recommended Actions:** Pre-alert the local broker 24 hours prior to flight arrival, ensuring HS codes are matched with local custom thresholds.\n\nWould you like me to analyze a specific tracking number for route delays?`
     citations = [
@@ -191,13 +185,13 @@ const toggleCitations = (msg: Message) => {
 </script>
 
 <template>
-  <div class="space-y-6">
+  <div class="space-y-6 text-[#1c1b17]">
     <!-- Header -->
-    <div class="border-b border-white/5 pb-5">
-      <h1 class="text-3xl font-extrabold tracking-tight bg-gradient-to-r from-white via-indigo-200 to-indigo-400 bg-clip-text text-transparent">
+    <div class="border-b border-[#e4e2d8] pb-5">
+      <h1 class="text-2xl font-extrabold tracking-tight text-[#1c1b17]">
         AI Logistics Copilot
       </h1>
-      <p class="text-slate-400 text-sm mt-1">
+      <p class="text-slate-500 text-xs mt-1">
         RAG Chatbot retrieving answers directly from Dimerco's logistics and custom manuals.
       </p>
     </div>
@@ -207,86 +201,86 @@ const toggleCitations = (msg: Message) => {
       
       <!-- Left Column: LLM Provider Configuration -->
       <div class="lg:col-span-3 space-y-5">
-        <div class="glass-panel rounded-2xl p-5 shadow-xl space-y-4">
-          <div class="flex items-center gap-2 border-b border-white/5 pb-3">
-            <Sparkles class="w-5 h-5 text-indigo-400" />
-            <h3 class="font-bold text-white text-sm">Model Selector</h3>
+        <div class="glass-card rounded-2xl p-5 shadow-sm space-y-4">
+          <div class="flex items-center gap-2 border-b border-[#e4e2d8] pb-3">
+            <Sparkles class="w-4.5 h-4.5 text-slate-700" />
+            <h3 class="font-bold text-[#1c1b17] text-xs uppercase tracking-wider">Model Selector</h3>
           </div>
-          <p class="text-xs text-slate-400">Choose which AI brain to route the contextual query through.</p>
+          <p class="text-[10px] text-slate-500">Choose which AI brain to route the contextual query through.</p>
           
-          <div class="space-y-2.5">
+          <div class="space-y-2">
             <!-- Claude -->
             <label 
               class="flex items-center justify-between p-3 rounded-xl border cursor-pointer transition-all duration-200"
               :class="selectedProvider === 'Claude' 
-                ? 'bg-indigo-500/10 border-indigo-500 text-white' 
-                : 'border-white/5 hover:border-white/10 text-slate-400'"
+                ? 'bg-black/[0.02] border-[#1c1b17] text-[#1c1b17]' 
+                : 'border-[#e4e2d8] hover:border-slate-400 text-slate-400'"
             >
-              <div class="flex items-center gap-2.5">
+              <div class="flex items-center gap-2">
                 <input 
                   type="radio" 
                   value="Claude" 
                   v-model="selectedProvider" 
                   class="hidden" 
                 />
-                <span class="w-2.5 h-2.5 rounded-full" :class="selectedProvider === 'Claude' ? 'bg-indigo-400' : 'bg-slate-700'"></span>
-                <span class="text-sm font-semibold">Claude 3.5 Sonnet</span>
+                <span class="w-2.5 h-2.5 rounded-full" :class="selectedProvider === 'Claude' ? 'bg-[#1c1b17]' : 'bg-slate-300'"></span>
+                <span class="text-xs font-bold">Claude 3.5 Sonnet</span>
               </div>
-              <span class="text-[10px] uppercase font-bold tracking-wider opacity-60">HQ AI</span>
+              <span class="text-[9px] uppercase font-bold tracking-wider opacity-60">HQ AI</span>
             </label>
 
             <!-- GPT -->
             <label 
               class="flex items-center justify-between p-3 rounded-xl border cursor-pointer transition-all duration-200"
               :class="selectedProvider === 'GPT' 
-                ? 'bg-purple-500/10 border-purple-500 text-white' 
-                : 'border-white/5 hover:border-white/10 text-slate-400'"
+                ? 'bg-black/[0.02] border-[#1c1b17] text-[#1c1b17]' 
+                : 'border-[#e4e2d8] hover:border-slate-400 text-slate-400'"
             >
-              <div class="flex items-center gap-2.5">
+              <div class="flex items-center gap-2">
                 <input 
                   type="radio" 
                   value="GPT" 
                   v-model="selectedProvider" 
                   class="hidden" 
                 />
-                <span class="w-2.5 h-2.5 rounded-full" :class="selectedProvider === 'GPT' ? 'bg-purple-400' : 'bg-slate-700'"></span>
-                <span class="text-sm font-semibold">GPT-4o Mini</span>
+                <span class="w-2.5 h-2.5 rounded-full" :class="selectedProvider === 'GPT' ? 'bg-[#1c1b17]' : 'bg-slate-300'"></span>
+                <span class="text-xs font-bold">GPT-4o Mini</span>
               </div>
-              <span class="text-[10px] uppercase font-bold tracking-wider opacity-60">Balanced</span>
+              <span class="text-[9px] uppercase font-bold tracking-wider opacity-60">Balanced</span>
             </label>
 
             <!-- Gemini -->
             <label 
               class="flex items-center justify-between p-3 rounded-xl border cursor-pointer transition-all duration-200"
               :class="selectedProvider === 'Gemini' 
-                ? 'bg-blue-500/10 border-blue-500 text-white' 
-                : 'border-white/5 hover:border-white/10 text-slate-400'"
+                ? 'bg-black/[0.02] border-[#1c1b17] text-[#1c1b17]' 
+                : 'border-[#e4e2d8] hover:border-slate-400 text-slate-400'"
             >
-              <div class="flex items-center gap-2.5">
+              <div class="flex items-center gap-2">
                 <input 
                   type="radio" 
                   value="Gemini" 
                   v-model="selectedProvider" 
                   class="hidden" 
                 />
-                <span class="w-2.5 h-2.5 rounded-full" :class="selectedProvider === 'Gemini' ? 'bg-blue-400' : 'bg-slate-700'"></span>
-                <span class="text-sm font-semibold">Gemini 1.5 Pro</span>
+                <span class="w-2.5 h-2.5 rounded-full" :class="selectedProvider === 'Gemini' ? 'bg-[#1c1b17]' : 'bg-slate-300'"></span>
+                <span class="text-xs font-bold">Gemini 1.5 Pro</span>
               </div>
-              <span class="text-[10px] uppercase font-bold tracking-wider opacity-60">Creative</span>
+              <span class="text-[9px] uppercase font-bold tracking-wider opacity-60">Creative</span>
             </label>
           </div>
         </div>
 
-        <div class="glass-card p-4.5 rounded-2xl flex gap-3 text-xs text-slate-400 leading-relaxed">
-          <Info class="w-5 h-5 text-indigo-400 shrink-0 mt-0.5" />
+        <div class="glass-card p-4 rounded-xl flex gap-3 text-[10px] text-slate-500 leading-relaxed bg-[#f3f2eb]/60">
+          <Info class="w-4.5 h-4.5 text-slate-600 shrink-0 mt-0.5" />
           <div>
-            <span class="font-bold text-white">ChromaDB Integration:</span> When a query is made, standard semantic algorithms fetch top-matching vectors before synthesising custom LLM outputs.
+            <span class="font-bold text-[#1c1b17]">ChromaDB Integration:</span> When a query is made, standard semantic algorithms fetch top-matching vectors before synthesising custom LLM outputs.
           </div>
         </div>
       </div>
 
       <!-- Right Column: Interactive Chat Box -->
-      <div class="lg:col-span-9 glass-panel rounded-2xl p-5 shadow-2xl flex flex-col h-[580px]">
+      <div class="lg:col-span-9 glass-card rounded-2xl p-5 shadow-sm flex flex-col h-[580px] bg-white">
         <!-- Messages Area -->
         <div 
           ref="chatContainer"
@@ -301,18 +295,18 @@ const toggleCitations = (msg: Message) => {
             <!-- Bot Avatar -->
             <div 
               v-if="msg.role === 'assistant'" 
-              class="h-9 w-9 rounded-lg bg-indigo-500/10 text-indigo-400 flex items-center justify-center border border-indigo-500/20 shrink-0 glow-indigo"
+              class="h-8 w-8 rounded bg-[#f3f2eb] text-slate-600 flex items-center justify-center border border-[#e4e2d8] shrink-0"
             >
-              <Bot class="w-5 h-5" />
+              <Bot class="w-4.5 h-4.5" />
             </div>
 
             <!-- Message Bubble -->
             <div class="max-w-[80%] space-y-2">
               <div 
-                class="rounded-2xl p-4 text-sm"
+                class="rounded-2xl p-4 text-xs leading-relaxed"
                 :class="msg.role === 'user'
-                  ? 'bg-indigo-600 text-white rounded-tr-none'
-                  : 'glass-card text-slate-100 rounded-tl-none leading-relaxed'"
+                  ? 'bg-[#f3f2eb] text-[#1c1b17] rounded-tr-none border border-[#e4e2d8]'
+                  : 'bg-white border border-[#e4e2d8] text-[#1c1b17] rounded-tl-none font-medium'"
               >
                 <!-- Rendered text -->
                 <div 
@@ -320,14 +314,14 @@ const toggleCitations = (msg: Message) => {
                   class="prose-custom" 
                   v-html="md.render(msg.displayText || '')"
                 ></div>
-                <div v-else class="whitespace-pre-line font-medium">{{ msg.displayText }}</div>
+                <div v-else class="whitespace-pre-line font-bold">{{ msg.displayText }}</div>
                 
                 <!-- Model provider used tag -->
                 <div 
                   v-if="msg.role === 'assistant' && msg.provider" 
-                  class="text-[10px] text-slate-400/80 font-bold uppercase tracking-wider mt-3 flex items-center gap-1"
+                  class="text-[9px] text-slate-400 font-bold uppercase tracking-wider mt-3 flex items-center gap-1 font-mono"
                 >
-                  <Layers class="w-3 h-3 text-slate-500" /> Powered by {{ msg.provider }}
+                  <Layers class="w-3 h-3 text-slate-400" /> Powered by {{ msg.provider }}
                 </div>
               </div>
 
@@ -338,7 +332,7 @@ const toggleCitations = (msg: Message) => {
               >
                 <button 
                   @click="toggleCitations(msg)"
-                  class="flex items-center gap-1 text-[11px] font-bold uppercase tracking-wider text-slate-400 hover:text-indigo-400 transition cursor-pointer"
+                  class="flex items-center gap-1 text-[10px] font-extrabold uppercase tracking-wider text-slate-500 hover:text-black transition cursor-pointer"
                 >
                   <BookOpen class="w-3.5 h-3.5" />
                   {{ msg.showCitations ? 'Hide reference sources' : `Show retrieved references (${msg.citations.length})` }}
@@ -349,18 +343,18 @@ const toggleCitations = (msg: Message) => {
                 <!-- Expanded citations list -->
                 <div 
                   v-if="msg.showCitations" 
-                  class="glass-card rounded-xl p-3 border border-white/5 divide-y divide-white/5 space-y-2.5 animate-in slide-in-from-top-2 duration-200"
+                  class="bg-[#f9f8f4] rounded-xl p-3 border border-[#e4e2d8] divide-y divide-[#e4e2d8] space-y-2.5 animate-in slide-in-from-top-2 duration-200"
                 >
                   <div 
                     v-for="(c, idx) in msg.citations" 
                     :key="idx"
-                    class="text-xs space-y-1 pt-2 first:pt-0"
+                    class="text-[11px] space-y-1 pt-2 first:pt-0 text-slate-600"
                   >
-                    <div class="flex justify-between items-center text-slate-400 font-semibold font-mono text-[10px]">
+                    <div class="flex justify-between items-center text-slate-500 font-bold font-mono text-[9px]">
                       <span>Source: {{ c.source }}</span>
-                      <span class="text-indigo-400">Match {{ idx + 1 }}</span>
+                      <span class="text-slate-400">Match {{ idx + 1 }}</span>
                     </div>
-                    <p class="text-slate-300 italic pl-2.5 border-l-2 border-indigo-500/40 leading-normal bg-slate-950/20 py-1 rounded">
+                    <p class="text-slate-700 italic pl-2.5 border-l-2 border-slate-400 leading-normal bg-white/50 py-1 rounded">
                       "{{ c.content_snippet }}"
                     </p>
                   </div>
@@ -371,15 +365,15 @@ const toggleCitations = (msg: Message) => {
             <!-- User Avatar -->
             <div 
               v-if="msg.role === 'user'" 
-              class="h-9 w-9 rounded-lg bg-slate-800 text-slate-300 flex items-center justify-center shrink-0 border border-white/5"
+              class="h-8 w-8 rounded bg-white border border-[#e4e2d8] text-slate-600 flex items-center justify-center shrink-0"
             >
-              <User class="w-5 h-5" />
+              <User class="w-4.5 h-4.5" />
             </div>
           </div>
         </div>
 
         <!-- Input Box Area -->
-        <div class="border-t border-white/5 pt-4 mt-4">
+        <div class="border-t border-[#e4e2d8] pt-4 mt-4">
           <form @submit.prevent="handleSend" class="relative">
             <input 
               v-model="promptInput" 
@@ -387,17 +381,17 @@ const toggleCitations = (msg: Message) => {
               placeholder="Ask anything about logistics schedules or Taoyuan/Noi Bai customs..." 
               required
               :disabled="loading"
-              class="glass-input pl-4 pr-12 py-3.5 w-full text-sm placeholder-slate-500"
+              class="glass-input pl-4 pr-12 py-3.5 w-full text-xs placeholder-slate-400"
             />
             <button 
               type="submit" 
               :disabled="loading || promptInput.trim().length < 2"
-              class="absolute right-2 top-1.5 p-2 rounded-lg bg-indigo-600 hover:bg-indigo-500 text-white transition disabled:opacity-40 disabled:hover:bg-indigo-600 flex items-center justify-center cursor-pointer"
+              class="absolute right-2 top-1.5 p-2 rounded-lg bg-[#1c1b17] hover:bg-[#36342e] text-white transition disabled:opacity-40 flex items-center justify-center cursor-pointer shadow-sm"
             >
-              <Send class="w-4 h-4" />
+              <Send class="w-3.5 h-3.5" />
             </button>
           </form>
-          <div class="flex justify-between text-[10px] text-slate-500 font-bold px-1.5 mt-1.5">
+          <div class="flex justify-between text-[9px] text-slate-400 font-bold px-1.5 mt-1.5 font-mono">
             <span>Minimum 2 characters, maximum 1000.</span>
             <span>ChromaDB Vector Storage Online</span>
           </div>
