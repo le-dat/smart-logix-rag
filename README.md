@@ -8,19 +8,26 @@ SmartLogix is an enterprise-grade logistics orchestration platform designed to s
 
 ```mermaid
 graph TD
-    subgraph Client ["Frontend (Host Native)"]
-        Vue3["Vue 3 + TS Dashboard & Chat UI<br/>(Exposed Port: 5173)"]
+    subgraph Client ["Frontend / Client Side"]
+        Vue3["Vue 3 + TS Dashboard & Chat UI<br/>(Vercel / Local Host: 5173)"]
     end
 
-    subgraph BackendInfrastructure ["Dockerized Backend Infrastructure"]
-        DotNet["C# .NET 8 Integration Gateway<br/>(API Controller, EF Core, HttpClient Proxy)<br/>(Container Port: 8080 | Host Port: 5000)"]
+    subgraph VPS ["VPS Host Environment (Production)"]
+        subgraph ProxyNet ["npm_network (External Bridge)"]
+            NPM["Nginx Proxy Manager<br/>(Exposes Port: 80 / 443)"]
+        end
 
-        MSSQL["MS SQL Server 2022 DB<br/>(Shipments, Customers, Routes, Risk, ChatLogs)<br/>(Container Port: 1433 | Host Port: 1433)"]
+        subgraph BackendInfrastructure ["Dockerized Backend Infrastructure (smartlogix-network)"]
+            DotNet["C# .NET 8 Integration Gateway<br/>(API Controller, EF Core, HttpClient Proxy)<br/>(Container Port: 8080 | Host Port: 5000)"]
 
-        PythonAI["Python FastAPI AI Engine<br/>(RAG Chatbot with ChromaDB, XGBoost ML Inference)<br/>(Container Port: 8000 | Host Port: 8000)"]
+            MSSQL["MS SQL Server 2022 DB<br/>(Shipments, Customers, Routes, Risk, ChatLogs)<br/>(Container Port: 1433 | Host Port: 1433)"]
+
+            PythonAI["Python FastAPI AI Engine<br/>(RAG Chatbot with ChromaDB, XGBoost ML Inference)<br/>(Container Port: 8000 | Host Port: 8000)"]
+        end
     end
 
-    Vue3 -->|HTTP/REST / EventSource Stream| DotNet
+    Vue3 -->|HTTP/REST / EventSource Stream| NPM
+    NPM -->|Reverse Proxy via npm_network| DotNet
     DotNet -->|EF Core Connection| MSSQL
     DotNet -->|Internal proxy via HttpClient| PythonAI
 ```
@@ -32,16 +39,28 @@ graph TD
 - **Python FastAPI Service (Docker):** Focused exclusively on compute-heavy AI/ML operations (vector searches, prompt building, LLM streaming, Classical ML regression/classification), exposing endpoints through a simple, high-performance REST API.
 - **MS SQL Server 2022 (Docker):** Central database with all primary operational, prediction, and interaction log tables.
 
+### 🌐 Production Request Flow (VPS)
+
+When deployed on a production VPS behind Nginx Proxy Manager (NPM):
+
+1. **Client (Vue 3)**: Sends standard HTTP REST or EventSource SSE (Server-Sent Events) streaming requests to the server IP or domain (listening on NPM ports `80` or `443`).
+2. **Nginx Proxy Manager**: Captures the request and reverse-proxies it to the C# backend (`http://backend-net:8080`) over the shared external `npm_network` docker network.
+   * *SSE Optimization*: Nginx buffering and caching are bypassed for standard API routes to allow instantaneous, real-time AI token delivery.
+3. **C# .NET 8 Gateway (`backend-net`)**: Enforces JWT authentication.
+   * For relational DB operations (CRUD), it communicates directly with MS SQL (`db-mssql:1433`) within the private `smartlogix-network`.
+   * For ML and RAG operations, it proxies requests internally using its configured `HttpClient` (targeting `http://ai-engine-python:8000`).
+4. **Python FastAPI Engine (`ai-engine-python`)**: Computes delay risk using XGBoost, or triggers a ChromaDB vector RAG search, returning real-time stream tokens (`text/event-stream`) that flow straight back to the client browser.
+
 ---
 
 ## 📋 Infrastructure Ports Mapping
 
-| Service               | Container Port | Host Port | Internal Docker Network Name |
-| :-------------------- | :------------- | :-------- | :--------------------------- |
-| **MS SQL Server**     | `1433`         | `1433`    | `db-mssql`                   |
-| **.NET 8 Web API**    | `8080`         | `5000`    | `backend-net`                |
-| **FastAPI AI Engine** | `8000`         | `8000`    | `ai-engine-python`           |
-| **Vue 3 Web Client**  | _N/A (Host)_   | `5173`    | _N/A (Access via localhost)_ |
+| Service               | Container Port | Host Port | Docker Network | Description |
+| :-------------------- | :------------- | :-------- | :------------- | :---------- |
+| **MS SQL Server**     | `1433`         | `1433`    | `smartlogix-network` | Private DB storage |
+| **.NET 8 Web API**    | `8080`         | `5000`    | `smartlogix-network`, `npm_network` | Public-facing integration gateway |
+| **FastAPI AI Engine** | `8000`         | `8000`    | `smartlogix-network` | Private ML inference and RAG search |
+| **Vue 3 Web Client**  | _N/A (Host)_   | `5173`    | _N/A (Access via localhost)_ | Dashboard & interactive chat client |
 
 ---
 

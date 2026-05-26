@@ -23,6 +23,7 @@ services:
       - smartlogix-network
 
   backend-net:
+    image: ghcr.io/le-dat/smart-logix-rag-backend:latest
     build:
       context: ./backend-net
       dockerfile: Dockerfile
@@ -38,8 +39,10 @@ services:
         condition: service_healthy
     networks:
       - smartlogix-network
+      - npm_network
 
   ai-engine-python:
+    image: ghcr.io/le-dat/smart-logix-rag-ai-engine:latest
     build:
       context: ./ai-engine-python
       dockerfile: Dockerfile
@@ -66,3 +69,5 @@ volumes:
 networks:
   smartlogix-network:
     driver: bridge
+  npm_network:        
+    external: true
