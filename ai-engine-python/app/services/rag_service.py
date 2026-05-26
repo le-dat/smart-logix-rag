@@ -157,7 +157,16 @@ class RAGService:
                 from langchain_openai import ChatOpenAI
                 from langchain_core.messages import SystemMessage, HumanMessage
 
-                llm = ChatOpenAI(model="gpt-4o-mini", openai_api_key=settings.OPENAI_API_KEY, timeout=15.0)
+                if provider.lower() == "minimax" and settings.MINIMAX_API_KEY:
+                    llm = ChatOpenAI(
+                        model="MiniMax-M2.5",
+                        openai_api_key=settings.MINIMAX_API_KEY,
+                        openai_api_base="https://api.minimax.io/v1",
+                        timeout=15.0
+                    )
+                else:
+                    llm = ChatOpenAI(model="gpt-4o-mini", openai_api_key=settings.OPENAI_API_KEY, timeout=15.0)
+
                 messages = [
                     SystemMessage(content=(
                         "You are the SmartLogix AI Assistant, a logistics copilot for Dimerco. "
@@ -234,7 +243,17 @@ class RAGService:
             try:
                 from langchain_openai import ChatOpenAI
                 from langchain_core.messages import SystemMessage, HumanMessage
-                llm = ChatOpenAI(model="gpt-4o-mini", openai_api_key=settings.OPENAI_API_KEY, timeout=15.0)
+
+                if provider.lower() == "minimax" and settings.MINIMAX_API_KEY:
+                    llm = ChatOpenAI(
+                        model="MiniMax-M2.5",
+                        openai_api_key=settings.MINIMAX_API_KEY,
+                        openai_api_base="https://api.minimax.io/v1",
+                        timeout=15.0
+                    )
+                else:
+                    llm = ChatOpenAI(model="gpt-4o-mini", openai_api_key=settings.OPENAI_API_KEY, timeout=15.0)
+
                 messages = [
                     SystemMessage(content=(
                         "You are the SmartLogix AI Assistant, a logistics copilot for Dimerco. "

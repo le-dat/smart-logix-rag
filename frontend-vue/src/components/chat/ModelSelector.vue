@@ -73,6 +73,26 @@ const selectedProvider = defineModel<string>({ required: true })
         </div>
         <span class="text-[9px] uppercase font-bold tracking-wider opacity-60">Creative</span>
       </label>
+
+      <!-- MiniMax -->
+      <label 
+        class="flex items-center justify-between p-3 rounded-xl border cursor-pointer transition-all duration-200"
+        :class="selectedProvider === 'MiniMax' 
+          ? 'bg-black/[0.02] border-[#1c1b17] text-[#1c1b17]' 
+          : 'border-[#e4e2d8] hover:border-slate-400 text-slate-400'"
+      >
+        <div class="flex items-center gap-2">
+          <input 
+            type="radio" 
+            value="MiniMax" 
+            v-model="selectedProvider" 
+            class="hidden" 
+          />
+          <span class="w-2.5 h-2.5 rounded-full" :class="selectedProvider === 'MiniMax' ? 'bg-[#1c1b17]' : 'bg-slate-300'"></span>
+          <span class="text-xs font-bold">MiniMax M2.5</span>
+        </div>
+        <span class="text-[9px] uppercase font-bold tracking-wider opacity-60">Fast & Smart</span>
+      </label>
     </div>
   </BaseCard>
 </template>

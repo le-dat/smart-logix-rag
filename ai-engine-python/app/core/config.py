@@ -14,6 +14,7 @@ class Settings(BaseSettings):
     # API Keys for online models (optional)
     OPENAI_API_KEY: str | None = os.getenv("OPENAI_API_KEY") or None
     ANTHROPIC_API_KEY: str | None = os.getenv("ANTHROPIC_API_KEY") or None
+    MINIMAX_API_KEY: str | None = os.getenv("MINIMAX_API_KEY") or None
     
     # CORS settings
     CORS_ALLOWED_ORIGINS: str = os.getenv("CORS_ALLOWED_ORIGINS", "http://localhost:5173")
@@ -24,7 +25,7 @@ class Settings(BaseSettings):
     @property
     def USE_OFFLINE_MODE(self) -> bool:
         """Determines if the service should fall back to local computation if no keys are provided."""
-        return not bool(self.OPENAI_API_KEY or self.ANTHROPIC_API_KEY)
+        return not bool(self.OPENAI_API_KEY or self.ANTHROPIC_API_KEY or self.MINIMAX_API_KEY)
 
     class Config:
         case_sensitive = True
