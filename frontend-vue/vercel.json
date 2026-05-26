@@ -1,7 +1,7 @@
 {
-  "buildCommand": "npm run build",
+  "buildCommand": "pnpm run build",
   "outputDirectory": "dist",
-  "installCommand": "npm install --frozen-lockfile --prefer-offline",
+  "installCommand": "pnpm install --frozen-lockfile",
   "routes": [
     {
       "src": "/api/(.*)",
