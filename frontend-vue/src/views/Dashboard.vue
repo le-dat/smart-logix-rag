@@ -9,6 +9,8 @@ import type { Shipment, CreateShipmentInput } from '../types'
 import KpiRow from '../components/dashboard/KpiRow.vue'
 import ShipmentTable from '../components/dashboard/ShipmentTable.vue'
 import AddShipmentModal from '../components/dashboard/AddShipmentModal.vue'
+import DelayTrendChart from '../components/dashboard/DelayTrendChart.vue'
+import RiskFactorChart from '../components/dashboard/RiskFactorChart.vue'
 
 const router = useRouter()
 const store = useLogisticsStore()
@@ -160,5 +162,20 @@ const navigateToPredict = (shipment: Shipment) => {
       @close="isAddModalOpen = false"
       @submit="handleAddShipment"
     />
+
+    <!-- ── Interactive Analytics Section ───────────────────────────────── -->
+    <div class="space-y-2">
+      <div class="flex items-baseline gap-2">
+        <h2 class="text-base font-extrabold tracking-tight text-[#1c1b17]">Predictive Analytics</h2>
+        <span class="text-[10px] font-bold text-slate-400 bg-[#f3f2eb] border border-[#e4e2d8] px-2 py-0.5 rounded-full">Powered by XGBoost + ChromaDB</span>
+      </div>
+      <p class="text-xs text-slate-400">Live visualization of delay trends and machine-learning feature importance derived from your shipment data.</p>
+    </div>
+
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+      <DelayTrendChart :shipments="store.shipments" />
+      <RiskFactorChart :shipments="store.shipments" />
+    </div>
+
   </div>
 </template>
