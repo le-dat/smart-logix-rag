@@ -22,11 +22,11 @@ const getFeaturePercentage = (val: number) => {
 </script>
 
 <template>
-  <div class="space-y-6">
+  <div class="space-y-6 select-none">
     <!-- Feature Importance Explainers (Perplexity style dark gray bars) -->
     <div class="space-y-4">
-      <h4 class="text-[10px] font-bold uppercase tracking-wider text-slate-400 flex items-center gap-2">
-        <TrendingUp class="w-4 h-4 text-slate-600" /> Explainable AI (SHAP Weights)
+      <h4 class="text-[9px] font-black uppercase tracking-widest text-text-secondary flex items-center gap-2 font-mono">
+        <TrendingUp class="w-4 h-4 text-brand-accent animate-pulse" /> Explainable AI (SHAP Weights)
       </h4>
       
       <div class="space-y-3.5">
@@ -36,13 +36,13 @@ const getFeaturePercentage = (val: number) => {
           class="space-y-1.5"
         >
           <div class="flex justify-between items-center text-xs font-semibold">
-            <span class="text-[#4a4943]">{{ getFeatureLabel(String(key)) }}</span>
-            <span class="text-[#1c1b17] font-mono font-bold">{{ getFeaturePercentage(val) }}%</span>
+            <span class="text-text-secondary font-bold">{{ getFeatureLabel(String(key)) }}</span>
+            <span class="text-text-primary font-mono font-bold">{{ getFeaturePercentage(val) }}%</span>
           </div>
           <!-- Visual horizontal bar -->
-          <div class="h-2 bg-[#f3f2eb] rounded-full overflow-hidden">
+          <div class="h-2 bg-brand-panel rounded-full overflow-hidden border border-brand-border/40">
             <div 
-              class="h-full bg-[#1c1b17] rounded-full transition-all duration-1000 ease-out"
+              class="h-full bg-brand-accent rounded-full transition-all duration-1000 ease-out"
               :style="{ width: `${val * 100}%` }"
             ></div>
           </div>
@@ -51,10 +51,10 @@ const getFeaturePercentage = (val: number) => {
     </div>
 
     <!-- Trigger Factors -->
-    <div class="bg-[#f3f2eb]/60 rounded-xl p-4 border border-[#e4e2d8] space-y-2">
-      <h4 class="text-[10px] font-bold uppercase tracking-wider text-slate-500">Diagnosis Justifications</h4>
-      <ul class="list-disc pl-4 text-xs text-slate-600 space-y-1.5 leading-relaxed">
-        <li v-for="(f, i) in factors" :key="i">{{ f }}</li>
+    <div class="bg-brand-panel/40 rounded-2xl p-4 border border-brand-border space-y-2.5">
+      <h4 class="text-[9px] font-black uppercase tracking-widest text-text-secondary font-mono">Diagnosis Justifications</h4>
+      <ul class="list-disc pl-4 text-xs text-text-secondary space-y-1.5 leading-relaxed font-medium">
+        <li v-for="(f, i) in factors" :key="i" class="marker:text-brand-accent">{{ f }}</li>
       </ul>
     </div>
   </div>

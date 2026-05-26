@@ -27,11 +27,11 @@ const selectedStatus = defineModel<string>('selectedStatus', { default: 'All' })
 </script>
 
 <template>
-  <BaseCard no-hover class="overflow-hidden shadow-sm !p-0">
+  <BaseCard no-hover class="overflow-hidden shadow-sm !p-0 bg-card-bg border border-brand-border">
     <!-- Search & Filters -->
-    <div class="p-4 border-b border-[#e4e2d8] bg-black/[0.01] flex flex-col md:flex-row md:items-center justify-between gap-4">
+    <div class="p-4 border-b border-brand-border bg-brand-panel/30 flex flex-col md:flex-row md:items-center justify-between gap-4">
       <div class="relative flex-1 max-w-md">
-        <span class="absolute inset-y-0 left-0 pl-3 flex items-center text-slate-400">
+        <span class="absolute inset-y-0 left-0 pl-3 flex items-center text-text-secondary/70">
           <Search class="w-4 h-4" />
         </span>
         <input 
@@ -42,13 +42,13 @@ const selectedStatus = defineModel<string>('selectedStatus', { default: 'All' })
         />
       </div>
       <div class="flex items-center gap-3">
-        <div class="flex items-center gap-1.5 text-slate-500 text-xs">
-          <Filter class="w-3.5 h-3.5" />
+        <div class="flex items-center gap-1.5 text-text-secondary text-xs font-semibold">
+          <Filter class="w-3.5 h-3.5 text-brand-accent" />
           <span>Status:</span>
         </div>
         <select 
           v-model="selectedStatus" 
-          class="glass-input px-3 py-1.5 text-xs font-semibold cursor-pointer"
+          class="glass-input px-3 py-1.5 text-xs font-bold cursor-pointer select-none bg-card-bg text-text-primary"
         >
           <option value="All">All Statuses</option>
           <option value="InTransit">InTransit</option>
@@ -62,62 +62,62 @@ const selectedStatus = defineModel<string>('selectedStatus', { default: 'All' })
     <div class="overflow-x-auto">
       <table class="w-full text-left border-collapse">
         <thead>
-          <tr class="border-b border-[#e4e2d8] bg-[#f3f2eb] text-[#1c1b17] text-[10px] uppercase tracking-wider font-bold">
-            <th class="py-3 px-5 font-bold">Tracking Number</th>
-            <th class="py-3 px-5 font-bold">Route</th>
-            <th class="py-3 px-5 font-bold">Sender / Receiver</th>
-            <th class="py-3 px-5 font-bold">Weight (kg)</th>
-            <th class="py-3 px-5 font-bold">Status</th>
-            <th class="py-3 px-5 font-bold">AI Risk Diagnosis</th>
-            <th class="py-3 px-5 font-bold text-right">Actions</th>
+          <tr class="border-b border-brand-border bg-brand-panel text-text-primary text-[9px] uppercase tracking-widest font-black font-mono">
+            <th class="py-3 px-5">Tracking Number</th>
+            <th class="py-3 px-5">Route</th>
+            <th class="py-3 px-5">Sender / Receiver</th>
+            <th class="py-3 px-5">Weight</th>
+            <th class="py-3 px-5">Status</th>
+            <th class="py-3 px-5">AI Risk Diagnosis</th>
+            <th class="py-3 px-5 text-right">Actions</th>
           </tr>
         </thead>
-        <tbody class="divide-y divide-[#e4e2d8]">
-          <tr v-if="shipments.length === 0" class="text-center text-slate-400">
+        <tbody class="divide-y divide-brand-border">
+          <tr v-if="shipments.length === 0" class="text-center text-text-secondary">
             <td colspan="7" class="py-10 text-xs font-bold">No shipments found. Try adjusting your filters.</td>
           </tr>
           <tr 
             v-for="shipment in shipments" 
             :key="shipment.id"
-            class="hover:bg-black/[0.01] transition group bg-white text-[#1c1b17]"
+            class="hover:bg-brand-panel/20 transition group bg-card-bg text-text-primary"
           >
             <!-- Tracking -->
             <td class="py-3 px-5">
-              <span class="font-mono text-xs font-bold text-[#1c1b17] tracking-wider flex items-center gap-2">
-                <Package class="w-4 h-4 text-slate-500" />
+              <span class="font-mono text-xs font-bold text-text-primary tracking-wider flex items-center gap-2">
+                <Package class="w-4 h-4 text-text-secondary/70 shrink-0" />
                 {{ shipment.trackingNo }}
               </span>
             </td>
             <!-- Route -->
             <td class="py-3 px-5">
-              <div class="text-xs font-bold text-[#1c1b17] flex items-center gap-1.5">
-                <Navigation class="w-3.5 h-3.5 text-slate-400" />
+              <div class="text-xs font-bold text-text-primary flex items-center gap-1.5">
+                <Navigation class="w-3.5 h-3.5 text-text-secondary/60 shrink-0" />
                 {{ shipment.route?.source.split('(')[0] || 'Local' }}
-                <span class="text-slate-400">➔</span>
+                <span class="text-brand-accent font-bold">➔</span>
                 {{ shipment.route?.destination.split('(')[0] || 'Destination' }}
               </div>
-              <div class="text-[10px] text-slate-400 mt-0.5 font-mono">Duration: {{ shipment.route?.averageDuration || 0 }} hrs</div>
+              <div class="text-[9px] text-text-secondary mt-0.5 font-mono">Duration: {{ shipment.route?.averageDuration || 0 }} hrs</div>
             </td>
             <!-- Sender / Receiver -->
             <td class="py-3 px-5">
-              <div class="text-xs text-[#1c1b17] font-bold">{{ shipment.sender }}</div>
-              <div class="text-[10px] text-slate-400 mt-0.5 flex items-center gap-1">
-                <User class="w-3 h-3 text-slate-400" />
+              <div class="text-xs text-text-primary font-bold">{{ shipment.sender }}</div>
+              <div class="text-[9px] text-text-secondary mt-0.5 flex items-center gap-1">
+                <User class="w-3 h-3 text-text-secondary/60 shrink-0" />
                 {{ shipment.receiver }}
               </div>
             </td>
             <!-- Weight -->
-            <td class="py-3 px-5 text-xs text-slate-600 font-mono">
+            <td class="py-3 px-5 text-xs text-text-secondary font-mono">
               {{ shipment.weight.toLocaleString('en-US') }} kg
             </td>
             <!-- Status -->
             <td class="py-3 px-5">
               <span 
-                class="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider"
+                class="inline-flex items-center px-2 py-0.5 rounded text-[9px] font-black uppercase tracking-wider border"
                 :class="{
-                  'bg-amber-100 text-amber-800 border border-amber-200/50': shipment.status === 'InTransit',
-                  'bg-purple-100 text-purple-800 border border-purple-200/50': shipment.status === 'CustomsClearance',
-                  'bg-emerald-100 text-emerald-800 border border-emerald-200/50': shipment.status === 'Delivered'
+                  'bg-amber-500/10 text-amber-500 border-amber-500/25': shipment.status === 'InTransit',
+                  'bg-purple-500/10 text-purple-500 border-purple-500/25': shipment.status === 'CustomsClearance',
+                  'bg-emerald-500/10 text-emerald-500 border-emerald-500/25': shipment.status === 'Delivered'
                 }"
               >
                 {{ shipment.status }}
@@ -127,19 +127,19 @@ const selectedStatus = defineModel<string>('selectedStatus', { default: 'All' })
             <td class="py-3 px-5">
               <div class="flex items-center gap-1.5">
                 <span 
-                  class="h-2 w-2 rounded-full"
+                  class="h-2 w-2 rounded-full shadow-sm"
                   :class="{
-                    'bg-emerald-500': shipment.riskLevel === 'Low',
-                    'bg-amber-500': shipment.riskLevel === 'Medium',
-                    'bg-rose-500': shipment.riskLevel === 'High',
+                    'bg-emerald-500 shadow-emerald-500/30': shipment.riskLevel === 'Low',
+                    'bg-amber-500 shadow-amber-500/30': shipment.riskLevel === 'Medium',
+                    'bg-rose-500 shadow-rose-500/30': shipment.riskLevel === 'High',
                   }"
                 ></span>
                 <span 
-                  class="text-[10px] font-bold uppercase tracking-wider font-mono"
+                  class="text-[9px] font-black uppercase tracking-wider font-mono"
                   :class="{
-                    'text-emerald-700': shipment.riskLevel === 'Low',
-                    'text-amber-700': shipment.riskLevel === 'Medium',
-                    'text-rose-700': shipment.riskLevel === 'High',
+                    'text-emerald-500': shipment.riskLevel === 'Low',
+                    'text-amber-500': shipment.riskLevel === 'Medium',
+                    'text-rose-500': shipment.riskLevel === 'High',
                   }"
                 >
                   {{ shipment.riskLevel }} ({{ Math.round((shipment.riskScore || 0.15) * 100) }}%)
@@ -151,13 +151,14 @@ const selectedStatus = defineModel<string>('selectedStatus', { default: 'All' })
               <div class="flex items-center justify-end gap-2">
                 <button 
                   @click="emit('diagnose', shipment)" 
-                  class="btn-capsule-secondary py-1 px-2.5 text-[10px] font-bold flex items-center gap-0.5 cursor-pointer shadow-sm"
+                  class="btn-capsule-secondary py-1 px-2.5 text-[9px] font-bold flex items-center gap-0.5 cursor-pointer shadow-sm select-none"
                 >
                   Diagnose <ArrowUpRight class="w-3 h-3" />
                 </button>
                 <button 
                   @click="emit('delete', shipment.id)" 
-                  class="text-slate-400 hover:text-red-600 p-1 rounded hover:bg-red-50 transition cursor-pointer"
+                  class="text-text-secondary hover:text-red-500 p-1.5 rounded-lg hover:bg-brand-panel transition-colors cursor-pointer"
+                  aria-label="Delete shipment"
                 >
                   <Trash2 class="w-3.5 h-3.5" />
                 </button>

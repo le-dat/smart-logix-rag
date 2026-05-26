@@ -1,0 +1,26 @@
+services:
+  db-mssql:
+    restart: "no"
+    ports: !override
+      - "127.0.0.1:1434:1433"
+
+  backend-net:
+    restart: "no"
+    ports: !override
+      - "127.0.0.1:5000:8080"
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Development
+
+  ai-engine-python:
+    restart: "no"
+    ports: !override
+      - "127.0.0.1:8000:8000"
+    volumes:
+      - ./ai-engine-python:/app
+    environment:
+      - ENV=development
+
+networks:
+  npm_network:
+    driver: bridge
+    external: false

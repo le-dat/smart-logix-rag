@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, computed } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { useAuthStore } from '../stores/auth'
 import { Eye, EyeOff, LogIn, Shield, Cpu } from '@lucide/vue'
@@ -12,6 +12,9 @@ const username = ref('')
 const password = ref('')
 const showPassword = ref(false)
 const submitted = ref(false)
+
+// Local state to check if theme is dark
+const isDark = ref(false)
 
 const isFormValid = computed(() =>
   username.value.trim().length >= 2 && password.value.length >= 3
@@ -28,46 +31,68 @@ const handleLogin = async () => {
   }
   submitted.value = false
 }
+
+// Initialise theme states on mount
+onMounted(() => {
+  const savedTheme = localStorage.getItem('theme')
+  const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches
+  
+  if (savedTheme === 'dark' || (!savedTheme && prefersDark)) {
+    isDark.value = true
+    document.documentElement.classList.add('dark')
+  } else {
+    isDark.value = false
+    document.documentElement.classList.remove('dark')
+  }
+})
 </script>
 
 <template>
-  <div class="min-h-screen bg-[#0d0d0f] flex items-center justify-center p-4 relative overflow-hidden">
+  <div class="min-h-screen bg-brand-bg flex items-center justify-center p-4 relative overflow-hidden transition-colors duration-300">
 
-    <!-- Ambient glow effects -->
-    <div class="pointer-events-none absolute inset-0">
-      <div class="absolute top-[-10%] left-[-5%] w-[500px] h-[500px] rounded-full bg-indigo-600/10 blur-[120px]"></div>
-      <div class="absolute bottom-[-10%] right-[-5%] w-[500px] h-[500px] rounded-full bg-violet-600/10 blur-[120px]"></div>
-      <div class="absolute top-[40%] left-[50%] -translate-x-1/2 w-[300px] h-[300px] rounded-full bg-cyan-500/5 blur-[100px]"></div>
+    <!-- Ambient glow effects (adapting to Light/Dark Mode) -->
+    <div class="pointer-events-none absolute inset-0 select-none">
+      <div 
+        class="absolute top-[-10%] left-[-5%] w-[500px] h-[500px] rounded-full blur-[120px] transition-colors duration-300"
+        :class="isDark ? 'bg-brand-accent/10' : 'bg-brand-accent/5'"
+      ></div>
+      <div 
+        class="absolute bottom-[-10%] right-[-5%] w-[500px] h-[500px] rounded-full blur-[120px] transition-colors duration-300"
+        :class="isDark ? 'bg-emerald-500/5' : 'bg-emerald-500/3'"
+      ></div>
+      <div class="absolute top-[40%] left-[50%] -translate-x-1/2 w-[300px] h-[300px] rounded-full bg-brand-accent/5 blur-[100px]"></div>
     </div>
 
     <!-- Dot grid pattern -->
-    <div class="pointer-events-none absolute inset-0"
-      style="background-image: radial-gradient(rgba(255,255,255,0.04) 1px, transparent 1px); background-size: 28px 28px;">
+    <div class="pointer-events-none absolute inset-0 select-none opacity-60"
+      :style="isDark 
+        ? 'background-image: radial-gradient(rgba(255,255,255,0.02) 1px, transparent 1px); background-size: 28px 28px;'
+        : 'background-image: radial-gradient(rgba(25,26,25,0.025) 1px, transparent 1px); background-size: 28px 28px;'">
     </div>
 
-    <!-- Login card -->
-    <div class="relative z-10 w-full max-w-md">
+    <!-- Login card container -->
+    <div class="relative z-10 w-full max-w-md select-none">
 
       <!-- Logo / Brand -->
       <div class="text-center mb-8">
-        <div class="inline-flex items-center justify-center w-14 h-14 rounded-2xl bg-gradient-to-br from-indigo-500 to-violet-600 shadow-lg shadow-indigo-500/30 mb-4">
-          <Cpu class="w-7 h-7 text-white" />
+        <div class="inline-flex items-center justify-center w-14 h-14 rounded-2xl bg-text-primary text-brand-bg shadow-md mb-4 border border-brand-border/20">
+          <Cpu class="w-7 h-7 text-brand-accent" />
         </div>
-        <h1 class="text-2xl font-extrabold text-white tracking-tight">SmartLogix</h1>
-        <p class="text-slate-400 text-sm mt-1 font-medium">AI Logistics Operations Hub</p>
+        <h1 class="text-3xl font-brand font-black tracking-tight text-text-primary uppercase">SmartLogix</h1>
+        <p class="text-text-secondary text-xs mt-1 font-semibold uppercase tracking-wider font-mono">AI Logistics Operations Hub</p>
       </div>
 
-      <!-- Card -->
-      <div class="bg-white/[0.04] border border-white/[0.08] rounded-2xl p-8 backdrop-blur-sm shadow-2xl">
-        <div class="flex items-center gap-2 mb-6">
-          <Shield class="w-4 h-4 text-indigo-400" />
-          <h2 class="text-white font-bold text-sm uppercase tracking-widest">Gateway Access</h2>
+      <!-- Main Login Card -->
+      <div class="glass-card rounded-3xl p-8 shadow-xl bg-card-bg border border-brand-border/60">
+        <div class="flex items-center gap-2 mb-6 border-b border-brand-border pb-3.5">
+          <Shield class="w-4.5 h-4.5 text-brand-accent" />
+          <h2 class="text-text-primary font-bold text-xs uppercase tracking-widest font-mono">Gateway Access</h2>
         </div>
 
         <form @submit.prevent="handleLogin" class="space-y-4" id="login-form">
-          <!-- Username -->
+          <!-- Username Input -->
           <div>
-            <label for="login-username" class="block text-xs font-semibold text-slate-400 mb-1.5 uppercase tracking-wider">
+            <label for="login-username" class="block text-[10px] font-black text-text-secondary mb-1.5 uppercase tracking-wider font-mono">
               Username
             </label>
             <input
@@ -75,18 +100,16 @@ const handleLogin = async () => {
               v-model="username"
               type="text"
               autocomplete="username"
-              placeholder="Enter your username"
+              placeholder="Enter username"
               required
               :disabled="authStore.loading"
-              class="w-full px-4 py-3 rounded-xl bg-white/[0.06] border border-white/[0.1] text-white placeholder-slate-500 text-sm font-medium
-                     focus:outline-none focus:border-indigo-500/80 focus:ring-1 focus:ring-indigo-500/40
-                     transition-all duration-200 disabled:opacity-50"
+              class="glass-input px-4 py-3 text-xs w-full font-semibold focus:outline-none"
             />
           </div>
 
-          <!-- Password -->
+          <!-- Password Input -->
           <div>
-            <label for="login-password" class="block text-xs font-semibold text-slate-400 mb-1.5 uppercase tracking-wider">
+            <label for="login-password" class="block text-[10px] font-black text-text-secondary mb-1.5 uppercase tracking-wider font-mono">
               Password
             </label>
             <div class="relative">
@@ -95,17 +118,15 @@ const handleLogin = async () => {
                 v-model="password"
                 :type="showPassword ? 'text' : 'password'"
                 autocomplete="current-password"
-                placeholder="Enter your password"
+                placeholder="Enter password"
                 required
                 :disabled="authStore.loading"
-                class="w-full px-4 py-3 pr-11 rounded-xl bg-white/[0.06] border border-white/[0.1] text-white placeholder-slate-500 text-sm font-medium
-                       focus:outline-none focus:border-indigo-500/80 focus:ring-1 focus:ring-indigo-500/40
-                       transition-all duration-200 disabled:opacity-50"
+                class="glass-input px-4 py-3 pr-11 text-xs w-full font-semibold focus:outline-none"
               />
               <button
                 type="button"
                 @click="showPassword = !showPassword"
-                class="absolute right-3 top-1/2 -translate-y-1/2 text-slate-500 hover:text-slate-300 transition-colors"
+                class="absolute right-3 top-1/2 -translate-y-1/2 text-text-secondary/70 hover:text-text-primary transition-colors cursor-pointer p-1 rounded-lg"
                 :aria-label="showPassword ? 'Hide password' : 'Show password'"
               >
                 <Eye v-if="!showPassword" class="w-4 h-4" />
@@ -114,44 +135,39 @@ const handleLogin = async () => {
             </div>
           </div>
 
-          <!-- Error message -->
+          <!-- Error Message Banner -->
           <transition name="slide-down">
             <div v-if="authStore.error" 
-                 class="flex items-start gap-2 text-xs text-red-400 bg-red-500/10 border border-red-500/20 rounded-xl px-3 py-2.5">
-              <span class="text-red-400 shrink-0 mt-0.5">⚠</span>
+                 class="flex items-start gap-2.5 text-xs text-rose-500 bg-rose-500/10 border border-rose-500/20 rounded-xl px-3 py-2.5 font-medium leading-normal animate-in slide-in-from-top-2 duration-150">
+              <span class="text-rose-500 shrink-0 mt-0.5 font-bold">⚠</span>
               <span>{{ authStore.error }}</span>
             </div>
           </transition>
 
-          <!-- Login button -->
+          <!-- Login Button Capsule -->
           <button
             id="login-submit-btn"
             type="submit"
             :disabled="!isFormValid || authStore.loading"
-            class="w-full flex items-center justify-center gap-2.5 py-3.5 rounded-xl font-bold text-sm
-                   bg-gradient-to-r from-indigo-500 to-violet-600
-                   hover:from-indigo-400 hover:to-violet-500
-                   text-white shadow-lg shadow-indigo-500/25
-                   transition-all duration-200
-                   disabled:opacity-40 disabled:cursor-not-allowed disabled:transform-none
-                   hover:shadow-indigo-500/40 hover:-translate-y-0.5 active:translate-y-0"
+            class="w-full flex items-center justify-center gap-2 py-3 rounded-full font-bold text-xs uppercase tracking-wider
+                   btn-capsule-primary cursor-pointer shadow-md select-none mt-2 disabled:opacity-30 disabled:cursor-not-allowed"
           >
-            <span v-if="authStore.loading" class="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin"></span>
-            <LogIn v-else class="w-4 h-4" />
+            <span v-if="authStore.loading" class="w-4 h-4 border-2 border-brand-bg/30 border-t-brand-bg rounded-full animate-spin"></span>
+            <LogIn v-else class="w-4 h-4 shrink-0" />
             <span>{{ authStore.loading ? 'Authenticating...' : 'Sign In' }}</span>
           </button>
         </form>
 
-        <!-- Default credentials hint -->
-        <div class="mt-6 pt-5 border-t border-white/[0.06]">
-          <p class="text-center text-[11px] text-slate-600 font-mono">
-            Default credentials: <span class="text-slate-400">admin</span> / <span class="text-slate-400">admin123</span>
+        <!-- Default Credentials Hint -->
+        <div class="mt-6 pt-5 border-t border-brand-border/60">
+          <p class="text-center text-[10px] text-text-secondary/70 font-mono">
+            Credentials: <span class="text-text-primary font-bold">admin</span> / <span class="text-text-primary font-bold">admin123</span>
           </p>
         </div>
       </div>
 
-      <!-- Footer -->
-      <p class="text-center text-[10px] text-slate-600 mt-6">
+      <!-- Footer Info -->
+      <p class="text-center text-[9px] font-black uppercase tracking-wider text-text-secondary/60 mt-6 font-mono">
         SmartLogix &copy; 2026 — AI Logistics Hub for Dimerco
       </p>
     </div>

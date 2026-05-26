@@ -1,46 +1,51 @@
 <script setup lang="ts">
-import { BookOpen, ChevronUp, ChevronDown } from '@lucide/vue'
+import { BookOpen } from '@lucide/vue'
 import type { Citation } from '../../types'
 
 interface Props {
   citations: Citation[]
-  showCitations: boolean
+  hoveredIndex: number | null
 }
 
 defineProps<Props>()
-const emit = defineEmits<{
-  toggle: []
-}>()
 </script>
 
 <template>
-  <div class="space-y-1.5">
-    <button 
-      type="button"
-      @click="emit('toggle')"
-      class="flex items-center gap-1 text-[10px] font-extrabold uppercase tracking-wider text-slate-500 hover:text-black transition cursor-pointer"
-    >
-      <BookOpen class="w-3.5 h-3.5" />
-      {{ showCitations ? 'Hide reference sources' : `Show retrieved references (${citations.length})` }}
-      <ChevronUp v-if="showCitations" class="w-3 h-3" />
-      <ChevronDown v-else class="w-3 h-3" />
-    </button>
+  <div class="space-y-2 mt-2 w-full">
+    <!-- Sources label -->
+    <div class="flex items-center gap-1.5 text-[9px] font-extrabold uppercase tracking-widest text-text-secondary">
+      <BookOpen class="w-3.5 h-3.5 text-brand-accent" />
+      <span>Sources & References</span>
+    </div>
 
-    <!-- Expanded citations list -->
-    <div 
-      v-if="showCitations" 
-      class="bg-[#f9f8f4] rounded-xl p-3 border border-[#e4e2d8] divide-y divide-[#e4e2d8] space-y-2.5 animate-in slide-in-from-top-2 duration-200"
-    >
+    <!-- Perplexity-style Grid of Source Cards -->
+    <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-2.5">
       <div 
         v-for="(c, idx) in citations" 
         :key="idx"
-        class="text-[11px] space-y-1 pt-2 first:pt-0 text-slate-600"
+        class="p-2.5 rounded-xl border text-left bg-card-bg transition-all duration-300 relative overflow-hidden group select-none shadow-[0_1px_2px_rgba(0,0,0,0.01)]"
+        :class="hoveredIndex === idx + 1 
+          ? 'border-brand-accent bg-brand-accent-glow ring-2 ring-brand-accent-glow scale-[1.01]' 
+          : 'border-brand-border hover:border-brand-accent/60 hover:scale-[1.01]'"
+        :title="c.content_snippet"
       >
-        <div class="flex justify-between items-center text-slate-500 font-bold font-mono text-[9px]">
-          <span>Source: {{ c.source }}</span>
-          <span class="text-slate-400">Match {{ idx + 1 }}</span>
+        <!-- Top header info -->
+        <div class="flex items-center justify-between gap-1.5 mb-1.5 border-b border-brand-border/30 pb-1">
+          <div class="flex items-center gap-1.5 min-w-0">
+            <span 
+              class="w-3.5 h-3.5 rounded-full text-[9px] font-bold flex items-center justify-center font-mono transition-colors duration-300"
+              :class="hoveredIndex === idx + 1 ? 'bg-brand-accent text-white' : 'bg-brand-panel text-brand-accent'"
+            >
+              {{ idx + 1 }}
+            </span>
+            <span class="text-[9px] font-bold text-text-primary truncate font-mono">{{ c.source }}</span>
+          </div>
+          <span class="text-[8px] text-text-secondary uppercase font-bold tracking-wider shrink-0 font-mono">
+            RAG Match
+          </span>
         </div>
-        <p class="text-slate-700 italic pl-2.5 border-l-2 border-slate-400 leading-normal bg-white/50 py-1 rounded">
+        <!-- Snippet content preview -->
+        <p class="text-[10px] text-text-secondary line-clamp-2 leading-relaxed italic group-hover:text-text-primary transition-colors">
           "{{ c.content_snippet }}"
         </p>
       </div>

@@ -13,7 +13,7 @@ const isLoginPage = computed(() => route.name === 'Login')
   <router-view v-if="isLoginPage" />
 
   <!-- Authenticated app shell -->
-  <div v-else class="min-h-screen flex text-slate-800 font-sans antialiased overflow-x-hidden bg-[#f9f8f4]">
+  <div v-else class="min-h-screen flex text-text-primary font-sans antialiased overflow-x-hidden bg-brand-bg">
 
     <!-- Sidebar Navigation -->
     <Sidebar />

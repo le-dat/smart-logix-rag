@@ -18,17 +18,19 @@ namespace SmartLogix.WebApi.Services
     {
         private readonly SmartLogixDbContext _context;
         private readonly IConfiguration _configuration;
+        private readonly IPasswordHasher _passwordHasher;
 
-        public AuthService(SmartLogixDbContext context, IConfiguration configuration)
+        public AuthService(SmartLogixDbContext context, IConfiguration configuration, IPasswordHasher passwordHasher)
         {
             _context = context;
             _configuration = configuration;
+            _passwordHasher = passwordHasher;
         }
 
         public Task<AuthResponseDto?> LoginAsync(LoginDto dto)
         {
             var user = _context.Users.FirstOrDefault(u => u.Username == dto.Username);
-            if (user == null || !DbInitializer.VerifyPassword(dto.Password, user.PasswordHash))
+            if (user == null || !_passwordHasher.VerifyPassword(dto.Password, user.PasswordHash))
                 return Task.FromResult<AuthResponseDto?>(null);
 
             return Task.FromResult<AuthResponseDto?>(BuildAuthResponse(user));
@@ -42,7 +44,7 @@ namespace SmartLogix.WebApi.Services
             var newUser = new User
             {
                 Username = dto.Username,
-                PasswordHash = DbInitializer.HashPassword(dto.Password),
+                PasswordHash = _passwordHasher.HashPassword(dto.Password),
                 Role = dto.Role == "Admin" ? "Admin" : "User",
                 CreatedAt = DateTime.UtcNow
             };
@@ -55,8 +57,7 @@ namespace SmartLogix.WebApi.Services
 
         private AuthResponseDto BuildAuthResponse(User user)
         {
-            var jwtKey = _configuration["Jwt:Key"]
-                ?? throw new InvalidOperationException("JWT:Key configuration is required. Set the JWT_SECRET_KEY environment variable.");
+            var jwtKey = _configuration["Jwt:Key"] ?? throw new InvalidOperationException("JWT Key is not configured.");
             var jwtIssuer = _configuration["Jwt:Issuer"] ?? "SmartLogixGateway";
             var jwtAudience = _configuration["Jwt:Audience"] ?? "SmartLogixClients";
             var expireHours = int.Parse(_configuration["Jwt:ExpireHours"] ?? "8");

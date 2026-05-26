@@ -114,17 +114,18 @@ const simulateFallback = () => {
 </script>
 
 <template>
-  <div class="space-y-6 text-[#1c1b17]">
+  <div class="space-y-6 text-text-primary">
     <!-- Back Navigation -->
-    <div class="flex items-center gap-3">
+    <div class="flex items-center gap-3 select-none">
       <button 
         @click="router.push('/')" 
-        class="glass-card p-2 rounded-lg text-slate-500 hover:text-black flex items-center justify-center cursor-pointer transition"
+        class="glass-card p-2 rounded-xl text-text-secondary hover:text-brand-accent flex items-center justify-center cursor-pointer transition border border-brand-border bg-card-bg shadow-sm"
         aria-label="Navigate back to dashboard"
+        title="Back"
       >
         <ArrowLeft class="w-4 h-4" />
       </button>
-      <h2 class="text-sm font-bold text-[#1c1b17]">Back to Dashboard</h2>
+      <h2 class="text-xs font-black uppercase tracking-wider font-mono text-text-primary">Back to Dashboard</h2>
     </div>
 
     <!-- Main Container -->
@@ -142,26 +143,26 @@ const simulateFallback = () => {
       </div>
 
       <!-- Right Side: Diagnostics Explainer Dashboard -->
-      <div class="lg:col-span-7 glass-card rounded-2xl p-6 shadow-sm flex flex-col justify-center min-h-[450px]">
+      <div class="lg:col-span-7 glass-card rounded-2xl p-6 shadow-sm flex flex-col justify-center min-h-[450px] bg-card-bg border border-brand-border">
         
         <!-- Welcome Screen if not predicted yet -->
-        <div v-if="!predicted && !loading" class="text-center py-12 space-y-4 max-w-sm mx-auto">
-          <div class="inline-flex bg-[#f3f2eb] p-5 rounded-full text-slate-500 border border-[#e4e2d8]">
-            <ShieldCheck class="w-12 h-12" />
+        <div v-if="!predicted && !loading" class="text-center py-12 space-y-4 max-w-sm mx-auto select-none">
+          <div class="inline-flex bg-brand-panel p-5 rounded-2xl text-text-secondary border border-brand-border/40 animate-pulse">
+            <ShieldCheck class="w-12 h-12 text-brand-accent" />
           </div>
-          <h3 class="text-lg font-extrabold text-[#1c1b17]">Diagnostics Awaiting Run</h3>
-          <p class="text-slate-500 text-xs leading-relaxed">
-            Select route and shipment attributes on the left panel, and click <span class="text-black font-bold">"Run Diagnostics"</span> to evaluate logistical risks with XGBoost machine learning model.
+          <h3 class="text-lg font-black text-text-primary">Diagnostics Awaiting Run</h3>
+          <p class="text-text-secondary text-xs leading-relaxed font-medium">
+            Select route and shipment attributes on the left panel, and click <span class="text-text-primary font-bold">"Run Diagnostics"</span> to evaluate logistical risks with XGBoost machine learning model.
           </p>
         </div>
 
         <!-- Loading Spinner -->
-        <div v-if="loading" class="text-center py-12 space-y-4">
-          <div class="inline-flex animate-spin text-slate-700">
+        <div v-if="loading" class="text-center py-12 space-y-4 select-none">
+          <div class="inline-flex animate-spin text-brand-accent">
             <RefreshCw class="w-10 h-10" />
           </div>
-          <h3 class="text-base font-bold text-[#1c1b17]">Running XGBoost Inference...</h3>
-          <p class="text-slate-400 text-xs font-medium">Extracting feature importance splits from tree nodes.</p>
+          <h3 class="text-base font-black text-text-primary">Running XGBoost Inference...</h3>
+          <p class="text-text-secondary text-xs font-semibold font-mono">Extracting feature importance splits from tree nodes.</p>
         </div>
 
         <!-- Result Content -->

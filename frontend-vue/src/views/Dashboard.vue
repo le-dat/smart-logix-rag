@@ -111,29 +111,30 @@ const navigateToPredict = (shipment: Shipment) => {
 </script>
 
 <template>
-  <div class="space-y-6">
+  <div class="space-y-6 text-text-primary">
     <!-- Header -->
-    <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4 border-b border-[#e4e2d8] pb-5">
+    <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4 border-b border-brand-border pb-5 select-none">
       <div>
-        <h1 class="text-2xl font-extrabold tracking-tight text-[#1c1b17]">
+        <h1 class="text-2xl font-brand font-black tracking-tight text-text-primary">
           Logistics Control Center
         </h1>
-        <p class="text-[#4a4943] text-xs mt-1">Real-time container logs, tracking, and predictive AI dispatch.</p>
+        <p class="text-text-secondary text-xs mt-1">Real-time container logs, tracking, and predictive AI dispatch.</p>
       </div>
       <div class="flex items-center gap-3">
         <button 
           @click="handleRefresh" 
-          class="glass-card p-2 rounded-lg text-slate-500 hover:text-black flex items-center justify-center cursor-pointer"
+          class="glass-card p-2 rounded-xl text-text-secondary hover:text-brand-accent flex items-center justify-center cursor-pointer border border-brand-border bg-card-bg shadow-sm"
           :class="{ 'animate-spin': store.loading }"
           aria-label="Refresh shipments data"
+          title="Refresh"
         >
           <RefreshCw class="w-4.5 h-4.5" />
         </button>
         <button 
           @click="isAddModalOpen = true" 
-          class="btn-capsule-primary flex items-center gap-2 py-2 px-4 shadow-sm text-xs cursor-pointer"
+          class="btn-capsule-primary flex items-center gap-2 py-2 px-4 shadow-sm text-xs cursor-pointer select-none font-bold"
         >
-          <Plus class="w-4.5 h-4.5" /> Add Shipment
+          <Plus class="w-4.5 h-4.5 shrink-0" /> Add Shipment
         </button>
       </div>
     </div>
@@ -164,12 +165,14 @@ const navigateToPredict = (shipment: Shipment) => {
     />
 
     <!-- ── Interactive Analytics Section ───────────────────────────────── -->
-    <div class="space-y-2">
+    <div class="space-y-2 select-none">
       <div class="flex items-baseline gap-2">
-        <h2 class="text-base font-extrabold tracking-tight text-[#1c1b17]">Predictive Analytics</h2>
-        <span class="text-[10px] font-bold text-slate-400 bg-[#f3f2eb] border border-[#e4e2d8] px-2 py-0.5 rounded-full">Powered by XGBoost + ChromaDB</span>
+        <h2 class="text-base font-brand font-black tracking-tight text-text-primary">Predictive Analytics</h2>
+        <span class="text-[9px] font-black font-mono text-brand-accent bg-brand-panel border border-brand-border px-2.5 py-0.5 rounded-full select-none">
+          Powered by XGBoost + ChromaDB
+        </span>
       </div>
-      <p class="text-xs text-slate-400">Live visualization of delay trends and machine-learning feature importance derived from your shipment data.</p>
+      <p class="text-xs text-text-secondary leading-relaxed font-medium">Live visualization of delay trends and machine-learning feature importance derived from your shipment data.</p>
     </div>
 
     <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
