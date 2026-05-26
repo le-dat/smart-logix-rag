@@ -7,14 +7,14 @@ services:
     restart: always
     environment:
       - ACCEPT_EULA=Y
-      - MSSQL_SA_PASSWORD=SmartLogix@SecurePassword2026
+      - MSSQL_SA_PASSWORD=${MSSQL_SA_PASSWORD:-SmartLogix@SecurePassword2026}
       - MSSQL_PID=Developer
     ports:
       - "1433:1433"
     volumes:
       - mssql-data:/var/opt/mssql
     healthcheck:
-      test: ["CMD", "/opt/mssql-tools18/bin/sqlcmd", "-S", "localhost", "-U", "sa", "-P", "SmartLogix@SecurePassword2026", "-Q", "SELECT 1", "-C"]
+      test: ["CMD", "/opt/mssql-tools18/bin/sqlcmd", "-S", "localhost", "-U", "sa", "-P", "${MSSQL_SA_PASSWORD:-SmartLogix@SecurePassword2026}", "-Q", "SELECT 1", "-C"]
       interval: 10s
       timeout: 5s
       retries: 6
@@ -32,7 +32,7 @@ services:
       - "5000:8080"
     environment:
       - ASPNETCORE_ENVIRONMENT=Development
-      - ConnectionStrings__DefaultConnection=Server=db-mssql;Database=SmartLogixDB;User Id=sa;Password=SmartLogix@SecurePassword2026;TrustServerCertificate=True;
+      - ConnectionStrings__DefaultConnection=Server=db-mssql;Database=${MSSQL_DB:-SmartLogixDB};User Id=sa;Password=${MSSQL_SA_PASSWORD:-SmartLogix@SecurePassword2026};TrustServerCertificate=True;
     depends_on:
       db-mssql:
         condition: service_healthy
@@ -47,9 +47,15 @@ services:
     restart: always
     ports:
       - "8000:8000"
+    volumes:
+      - ./docs:/docs
     environment:
       - PORT=8000
       - HOST=0.0.0.0
+      - DATA_DIR=/docs/data
+      - OPENAI_API_KEY=${OPENAI_API_KEY:-}
+      - ANTHROPIC_API_KEY=${ANTHROPIC_API_KEY:-}
+      - CORS_ALLOWED_ORIGINS=${CORS_ALLOWED_ORIGINS:-http://localhost:5173}
     networks:
       - smartlogix-network
 

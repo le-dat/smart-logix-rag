@@ -1,0 +1,15 @@
+{
+    "carrier_mapping": {
+        "Dimerco Air": 0,
+        "Express Ocean": 1,
+        "FastLogix": 2,
+        "DirectCarrier": 3
+    },
+    "features": [
+        "route_id",
+        "carrier_encoded",
+        "weight",
+        "weather_index",
+        "historical_delay_ratio"
+    ]
+}

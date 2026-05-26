@@ -20,6 +20,7 @@ WORKDIR /app
 # Copy built dependency wheels from builder
 COPY --from=builder /root/.local /root/.local
 COPY main.py .
+COPY app/ app/
 
 # Add python path dependencies to PATH variable
 ENV PATH=/root/.local/bin:$PATH

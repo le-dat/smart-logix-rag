@@ -2,7 +2,7 @@ from typing import List, Optional
 from pydantic import BaseModel, Field
 
 class ChatQuery(BaseModel):
-    prompt: str = Field(..., description="The user question or query regarding logistics policies.")
+    prompt: str = Field(..., min_length=2, max_length=1000, description="The user question or query regarding logistics policies.")
     provider: Optional[str] = Field("Claude", description="The selected LLM Provider: Claude, GPT, Gemini")
 
 class DocumentCitation(BaseModel):

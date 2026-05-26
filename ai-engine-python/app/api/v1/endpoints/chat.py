@@ -1,5 +1,6 @@
 from fastapi import APIRouter, HTTPException
-from app.schemas.chat import ChatQuery, ChatResponse, DocumentCitation
+from app.schemas.chat import ChatQuery, ChatResponse
+from app.services.rag_service import rag_service
 
 router = APIRouter()
 
@@ -10,23 +11,12 @@ async def ask_chatbot(query: ChatQuery):
     Retrieves policy context from ChromaDB and invokes the selected LLM Provider.
     """
     try:
-        # Mocking RAG response for initial modular layout structure
-        mock_citations = [
-            DocumentCitation(
-                source="Dimerco_Internal_FAQ.pdf",
-                content_snippet="Standard clearance times for air cargo shipments from Taipei average 12-24 hours under normal conditions."
-            )
-        ]
-        
-        response_text = (
-            f"[SmartLogix AI Assistant] Standard clearance for air cargo from Taipei is 12-24 hours. "
-            f"This request was simulated using your selected LLM Provider: {query.provider}."
-        )
+        response_text, citations = rag_service.query(query.prompt, query.provider)
         
         return ChatResponse(
             response=response_text,
             provider_used=query.provider or "Claude",
-            citations=mock_citations
+            citations=citations
         )
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))

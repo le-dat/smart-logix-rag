@@ -3,11 +3,11 @@ from pydantic import BaseModel, Field
 
 class RiskPredictionQuery(BaseModel):
     shipment_id: Optional[int] = Field(None, description="The ID of the shipment if existing in SQL DB.")
-    route_id: int = Field(..., description="Unique route identifier.")
-    carrier: str = Field(..., description="Name of the shipping carrier.")
-    weight: float = Field(..., description="Weight of the shipment cargo.")
-    weather_index: float = Field(..., description="Scale of weather severity (e.g. 0.0 for clear, 5.0 for extreme storm).")
-    historical_delay_ratio: float = Field(0.0, description="Delay ratio of the chosen carrier/route (0.0 to 1.0).")
+    route_id: int = Field(..., ge=1, description="Unique route identifier.")
+    carrier: str = Field(..., pattern="^(Dimerco Air|Express Ocean|FastLogix|DirectCarrier)$", description="Name of the shipping carrier (must match trained carriers).")
+    weight: float = Field(..., ge=1.0, le=50000.0, description="Weight of the shipment cargo in kg.")
+    weather_index: float = Field(..., ge=0.0, le=5.0, description="Scale of weather severity (0.0 for clear, 5.0 for storm).")
+    historical_delay_ratio: float = Field(0.0, ge=0.0, le=1.0, description="Delay ratio of the chosen carrier/route (0.0 to 1.0).")
 
 class RiskPredictionResponse(BaseModel):
     shipment_id: Optional[int] = Field(None)
