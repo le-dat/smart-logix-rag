@@ -1,0 +1,55 @@
+# === OS Metadata ===
+.DS_Store
+Thumbs.db
+*.log
+
+# === .NET Core / C# ===
+bin/
+obj/
+[Dd]ebug/
+[Rr]elease/
+*.user
+*.suo
+*.userosscache
+*.sln.docstates
+.vs/
+.vscode/
+
+# === Python / FastAPI ===
+__pycache__/
+*.py[cod]
+*$py.class
+.venv/
+venv/
+ENV/
+env/
+.pytest_cache/
+.coverage
+htmlcov/
+.mypy_cache/
+
+# === Node.js / Vue 3 ===
+node_modules/
+dist/
+dist-ssr/
+*.local
+.npm
+.eslintcache
+.stylelintcache
+package-lock.json
+
+# === Docker & Database ===
+.docker/
+mssql-data/
+*.db
+*.sqlite
+
+# === Local Environment / Secrets ===
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+
+.claude
+docs*
