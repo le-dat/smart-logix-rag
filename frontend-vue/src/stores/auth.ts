@@ -1,6 +1,5 @@
 import { ref, computed } from 'vue'
 import { defineStore } from 'pinia'
-import { useRouter } from 'vue-router'
 
 const API_NET = import.meta.env.VITE_API_NET || 'http://localhost:5000'
 const TOKEN_KEY = 'smartlogix_token'
