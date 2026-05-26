@@ -1,41 +1,15 @@
 <script setup lang="ts">
 import { ref, nextTick } from 'vue'
-import { 
-  Send, 
-  Bot, 
-  User, 
-  Sparkles, 
-  Layers,
-  ChevronDown,
-  ChevronUp,
-  BookOpen,
-  Info
-} from '@lucide/vue'
-import MarkdownIt from 'markdown-it'
+import { Send, Info } from '@lucide/vue'
+import { chatService } from '../services/chatService'
+import { useTypewriter } from '../composables/useTypewriter'
+import type { Message, Citation } from '../types'
 
-const md = new MarkdownIt({
-  html: false,
-  linkify: true,
-  typographer: true
-})
+// Modular Components
+import ModelSelector from '../components/chat/ModelSelector.vue'
+import ChatMessage from '../components/chat/ChatMessage.vue'
 
-interface Citation {
-  source: string
-  content_snippet: string
-}
-
-interface Message {
-  id: number
-  role: 'user' | 'assistant'
-  text: string
-  displayText: string // Used for the simulated typing effect
-  isTyping: boolean
-  provider?: string
-  citations?: Citation[]
-  showCitations?: boolean
-}
-
-// State
+// Reactive Chat States
 const messages = ref<Message[]>([
   {
     id: 1,
@@ -51,7 +25,10 @@ const selectedProvider = ref('Claude')
 const loading = ref(false)
 const chatContainer = ref<HTMLElement | null>(null)
 
-// Auto-scroll logic
+// Instantiate our premium typewriter composable
+const { type } = useTypewriter()
+
+// Auto-scroll logic inside viewport
 const scrollToBottom = async () => {
   await nextTick()
   if (chatContainer.value) {
@@ -59,24 +36,7 @@ const scrollToBottom = async () => {
   }
 }
 
-// Simulated premium typewriter effect
-const typeMessage = (messageObj: Message, fullText: string, index = 0) => {
-  if (index < fullText.length) {
-    messageObj.isTyping = true
-    messageObj.displayText += fullText.charAt(index)
-    scrollToBottom()
-    
-    const speed = fullText.length > 500 ? 8 : 15
-    setTimeout(() => {
-      typeMessage(messageObj, fullText, index + 1)
-    }, speed)
-  } else {
-    messageObj.isTyping = false
-    scrollToBottom()
-  }
-}
-
-// Handle sending message
+// Handle sending prompt queries
 const handleSend = async () => {
   const prompt = promptInput.value.trim()
   if (!prompt || prompt.length < 2 || prompt.length > 1000) return
@@ -106,38 +66,32 @@ const handleSend = async () => {
   }
   messages.value.push(aiMessage)
 
-  const apiPython = import.meta.env.VITE_API_PYTHON || 'http://localhost:8000'
-  
   try {
-    const response = await fetch(`${apiPython}/api/v1/chat/`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        prompt: prompt,
-        provider: selectedProvider.value
-      })
-    })
-
-    if (!response.ok) {
-      throw new Error('API server returned error status')
-    }
-
-    const data = await response.json()
-    
+    const data = await chatService.ask(prompt, selectedProvider.value)
     aiMessage.text = data.response
-    aiMessage.citations = data.citations || []
+    aiMessage.citations = data.citations ?? []
     
-    typeMessage(aiMessage, data.response)
-    
+    // Trigger typewriter effect
+    type(
+      data.response,
+      (_, accumulated) => {
+        aiMessage.displayText = accumulated
+        scrollToBottom()
+      },
+      () => {
+        aiMessage.isTyping = false
+        scrollToBottom()
+      }
+    )
   } catch (err: any) {
-    console.error(err)
+    console.error('FastAPI RAG error, running offline simulation fallback.', err)
     simulateFallback(prompt, aiMessage)
   } finally {
     loading.value = false
   }
 }
 
-// Resilient Offline AI Fallback Simulation
+// offline simulator for safety/offline demonstration
 const simulateFallback = (prompt: string, aiMessage: Message) => {
   const query = prompt.toLowerCase()
   let answer = ""
@@ -176,7 +130,18 @@ const simulateFallback = (prompt: string, aiMessage: Message) => {
   aiMessage.text = answer
   aiMessage.citations = citations
   
-  typeMessage(aiMessage, answer)
+  // Trigger typewriter effect
+  type(
+    answer,
+    (_, accumulated) => {
+      aiMessage.displayText = accumulated
+      scrollToBottom()
+    },
+    () => {
+      aiMessage.isTyping = false
+      scrollToBottom()
+    }
+  )
 }
 
 const toggleCitations = (msg: Message) => {
@@ -201,75 +166,7 @@ const toggleCitations = (msg: Message) => {
       
       <!-- Left Column: LLM Provider Configuration -->
       <div class="lg:col-span-3 space-y-5">
-        <div class="glass-card rounded-2xl p-5 shadow-sm space-y-4">
-          <div class="flex items-center gap-2 border-b border-[#e4e2d8] pb-3">
-            <Sparkles class="w-4.5 h-4.5 text-slate-700" />
-            <h3 class="font-bold text-[#1c1b17] text-xs uppercase tracking-wider">Model Selector</h3>
-          </div>
-          <p class="text-[10px] text-slate-500">Choose which AI brain to route the contextual query through.</p>
-          
-          <div class="space-y-2">
-            <!-- Claude -->
-            <label 
-              class="flex items-center justify-between p-3 rounded-xl border cursor-pointer transition-all duration-200"
-              :class="selectedProvider === 'Claude' 
-                ? 'bg-black/[0.02] border-[#1c1b17] text-[#1c1b17]' 
-                : 'border-[#e4e2d8] hover:border-slate-400 text-slate-400'"
-            >
-              <div class="flex items-center gap-2">
-                <input 
-                  type="radio" 
-                  value="Claude" 
-                  v-model="selectedProvider" 
-                  class="hidden" 
-                />
-                <span class="w-2.5 h-2.5 rounded-full" :class="selectedProvider === 'Claude' ? 'bg-[#1c1b17]' : 'bg-slate-300'"></span>
-                <span class="text-xs font-bold">Claude 3.5 Sonnet</span>
-              </div>
-              <span class="text-[9px] uppercase font-bold tracking-wider opacity-60">HQ AI</span>
-            </label>
-
-            <!-- GPT -->
-            <label 
-              class="flex items-center justify-between p-3 rounded-xl border cursor-pointer transition-all duration-200"
-              :class="selectedProvider === 'GPT' 
-                ? 'bg-black/[0.02] border-[#1c1b17] text-[#1c1b17]' 
-                : 'border-[#e4e2d8] hover:border-slate-400 text-slate-400'"
-            >
-              <div class="flex items-center gap-2">
-                <input 
-                  type="radio" 
-                  value="GPT" 
-                  v-model="selectedProvider" 
-                  class="hidden" 
-                />
-                <span class="w-2.5 h-2.5 rounded-full" :class="selectedProvider === 'GPT' ? 'bg-[#1c1b17]' : 'bg-slate-300'"></span>
-                <span class="text-xs font-bold">GPT-4o Mini</span>
-              </div>
-              <span class="text-[9px] uppercase font-bold tracking-wider opacity-60">Balanced</span>
-            </label>
-
-            <!-- Gemini -->
-            <label 
-              class="flex items-center justify-between p-3 rounded-xl border cursor-pointer transition-all duration-200"
-              :class="selectedProvider === 'Gemini' 
-                ? 'bg-black/[0.02] border-[#1c1b17] text-[#1c1b17]' 
-                : 'border-[#e4e2d8] hover:border-slate-400 text-slate-400'"
-            >
-              <div class="flex items-center gap-2">
-                <input 
-                  type="radio" 
-                  value="Gemini" 
-                  v-model="selectedProvider" 
-                  class="hidden" 
-                />
-                <span class="w-2.5 h-2.5 rounded-full" :class="selectedProvider === 'Gemini' ? 'bg-[#1c1b17]' : 'bg-slate-300'"></span>
-                <span class="text-xs font-bold">Gemini 1.5 Pro</span>
-              </div>
-              <span class="text-[9px] uppercase font-bold tracking-wider opacity-60">Creative</span>
-            </label>
-          </div>
-        </div>
+        <ModelSelector v-model="selectedProvider" />
 
         <div class="glass-card p-4 rounded-xl flex gap-3 text-[10px] text-slate-500 leading-relaxed bg-[#f3f2eb]/60">
           <Info class="w-4.5 h-4.5 text-slate-600 shrink-0 mt-0.5" />
@@ -284,92 +181,14 @@ const toggleCitations = (msg: Message) => {
         <!-- Messages Area -->
         <div 
           ref="chatContainer"
-          class="flex-1 overflow-y-auto pr-2 space-y-5"
+          class="flex-1 overflow-y-auto pr-2 space-y-5 animate-in fade-in duration-300"
         >
-          <div 
+          <ChatMessage 
             v-for="msg in messages" 
             :key="msg.id"
-            class="flex items-start gap-3.5 group"
-            :class="msg.role === 'user' ? 'justify-end' : 'justify-start'"
-          >
-            <!-- Bot Avatar -->
-            <div 
-              v-if="msg.role === 'assistant'" 
-              class="h-8 w-8 rounded bg-[#f3f2eb] text-slate-600 flex items-center justify-center border border-[#e4e2d8] shrink-0"
-            >
-              <Bot class="w-4.5 h-4.5" />
-            </div>
-
-            <!-- Message Bubble -->
-            <div class="max-w-[80%] space-y-2">
-              <div 
-                class="rounded-2xl p-4 text-xs leading-relaxed"
-                :class="msg.role === 'user'
-                  ? 'bg-[#f3f2eb] text-[#1c1b17] rounded-tr-none border border-[#e4e2d8]'
-                  : 'bg-white border border-[#e4e2d8] text-[#1c1b17] rounded-tl-none font-medium'"
-              >
-                <!-- Rendered text -->
-                <div 
-                  v-if="msg.role === 'assistant'"
-                  class="prose-custom" 
-                  v-html="md.render(msg.displayText || '')"
-                ></div>
-                <div v-else class="whitespace-pre-line font-bold">{{ msg.displayText }}</div>
-                
-                <!-- Model provider used tag -->
-                <div 
-                  v-if="msg.role === 'assistant' && msg.provider" 
-                  class="text-[9px] text-slate-400 font-bold uppercase tracking-wider mt-3 flex items-center gap-1 font-mono"
-                >
-                  <Layers class="w-3 h-3 text-slate-400" /> Powered by {{ msg.provider }}
-                </div>
-              </div>
-
-              <!-- RAG Citations Section (AI replies only) -->
-              <div 
-                v-if="msg.role === 'assistant' && msg.citations && msg.citations.length > 0"
-                class="space-y-1.5"
-              >
-                <button 
-                  @click="toggleCitations(msg)"
-                  class="flex items-center gap-1 text-[10px] font-extrabold uppercase tracking-wider text-slate-500 hover:text-black transition cursor-pointer"
-                >
-                  <BookOpen class="w-3.5 h-3.5" />
-                  {{ msg.showCitations ? 'Hide reference sources' : `Show retrieved references (${msg.citations.length})` }}
-                  <ChevronUp v-if="msg.showCitations" class="w-3 h-3" />
-                  <ChevronDown v-else class="w-3 h-3" />
-                </button>
-
-                <!-- Expanded citations list -->
-                <div 
-                  v-if="msg.showCitations" 
-                  class="bg-[#f9f8f4] rounded-xl p-3 border border-[#e4e2d8] divide-y divide-[#e4e2d8] space-y-2.5 animate-in slide-in-from-top-2 duration-200"
-                >
-                  <div 
-                    v-for="(c, idx) in msg.citations" 
-                    :key="idx"
-                    class="text-[11px] space-y-1 pt-2 first:pt-0 text-slate-600"
-                  >
-                    <div class="flex justify-between items-center text-slate-500 font-bold font-mono text-[9px]">
-                      <span>Source: {{ c.source }}</span>
-                      <span class="text-slate-400">Match {{ idx + 1 }}</span>
-                    </div>
-                    <p class="text-slate-700 italic pl-2.5 border-l-2 border-slate-400 leading-normal bg-white/50 py-1 rounded">
-                      "{{ c.content_snippet }}"
-                    </p>
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            <!-- User Avatar -->
-            <div 
-              v-if="msg.role === 'user'" 
-              class="h-8 w-8 rounded bg-white border border-[#e4e2d8] text-slate-600 flex items-center justify-center shrink-0"
-            >
-              <User class="w-4.5 h-4.5" />
-            </div>
-          </div>
+            :message="msg"
+            @toggle-citations="toggleCitations(msg)"
+          />
         </div>
 
         <!-- Input Box Area -->
@@ -387,6 +206,7 @@ const toggleCitations = (msg: Message) => {
               type="submit" 
               :disabled="loading || promptInput.trim().length < 2"
               class="absolute right-2 top-1.5 p-2 rounded-lg bg-[#1c1b17] hover:bg-[#36342e] text-white transition disabled:opacity-40 flex items-center justify-center cursor-pointer shadow-sm"
+              aria-label="Send message to copilot"
             >
               <Send class="w-3.5 h-3.5" />
             </button>
