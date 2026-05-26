@@ -1,6 +1,8 @@
 using System.Collections.Generic;
+using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Mvc;
+using SmartLogix.WebApi.DTOs;
 using SmartLogix.WebApi.Models;
 using SmartLogix.WebApi.Services;
 
@@ -19,42 +21,44 @@ namespace SmartLogix.WebApi.Controllers
 
         // GET: api/customers
         [HttpGet]
-        public async Task<ActionResult<IEnumerable<Customer>>> GetCustomers()
+        public async Task<ActionResult<IEnumerable<CustomerDto>>> GetCustomers()
         {
             var customers = await _customerService.GetAllCustomersAsync();
-            return Ok(customers);
+            var customerDtos = customers.Select(c => c.ToDto());
+            return Ok(customerDtos);
         }
 
         // GET: api/customers/5
         [HttpGet("{id}")]
-        public async Task<ActionResult<Customer>> GetCustomer(int id)
+        public async Task<ActionResult<CustomerDto>> GetCustomer(int id)
         {
             var customer = await _customerService.GetCustomerByIdAsync(id);
             if (customer == null)
             {
                 return NotFound(new { message = $"Customer with ID {id} not found." });
             }
-            return Ok(customer);
+            return Ok(customer.ToDto());
         }
 
         // POST: api/customers
         [HttpPost]
-        public async Task<ActionResult<Customer>> CreateCustomer([FromBody] Customer customer)
+        public async Task<ActionResult<CustomerDto>> CreateCustomer([FromBody] CustomerCreateDto dto)
         {
             if (!ModelState.IsValid)
             {
                 return BadRequest(ModelState);
             }
 
-            var createdCustomer = await _customerService.CreateCustomerAsync(customer);
-            return CreatedAtAction(nameof(GetCustomer), new { id = createdCustomer.Id }, createdCustomer);
+            var customerEntity = dto.ToEntity();
+            var createdCustomer = await _customerService.CreateCustomerAsync(customerEntity);
+            return CreatedAtAction(nameof(GetCustomer), new { id = createdCustomer.Id }, createdCustomer.ToDto());
         }
 
         // PUT: api/customers/5
         [HttpPut("{id}")]
-        public async Task<IActionResult> UpdateCustomer(int id, [FromBody] Customer customer)
+        public async Task<IActionResult> UpdateCustomer(int id, [FromBody] CustomerUpdateDto dto)
         {
-            if (id != customer.Id)
+            if (id != dto.Id)
             {
                 return BadRequest(new { message = "ID mismatch in request." });
             }
@@ -64,10 +68,17 @@ namespace SmartLogix.WebApi.Controllers
                 return BadRequest(ModelState);
             }
 
-            var updated = await _customerService.UpdateCustomerAsync(customer);
+            var existingCustomer = await _customerService.GetCustomerByIdAsync(id);
+            if (existingCustomer == null)
+            {
+                return NotFound(new { message = $"Customer with ID {id} not found." });
+            }
+
+            dto.UpdateEntity(existingCustomer);
+            var updated = await _customerService.UpdateCustomerAsync(existingCustomer);
             if (!updated)
             {
-                return NotFound(new { message = $"Customer with ID {id} not found or no changes made." });
+                return BadRequest(new { message = "Failed to update customer. No changes were made or a database error occurred." });
             }
 
             return NoContent();

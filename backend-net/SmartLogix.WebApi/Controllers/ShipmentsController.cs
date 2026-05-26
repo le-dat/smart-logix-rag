@@ -1,6 +1,8 @@
 using System.Collections.Generic;
+using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Mvc;
+using SmartLogix.WebApi.DTOs;
 using SmartLogix.WebApi.Models;
 using SmartLogix.WebApi.Services;
 
@@ -19,39 +21,40 @@ namespace SmartLogix.WebApi.Controllers
 
         // GET: api/shipments
         [HttpGet]
-        public async Task<ActionResult<IEnumerable<Shipment>>> GetShipments()
+        public async Task<ActionResult<IEnumerable<ShipmentDto>>> GetShipments()
         {
             var shipments = await _shipmentService.GetAllShipmentsAsync();
-            return Ok(shipments);
+            var shipmentDtos = shipments.Select(s => s.ToDto());
+            return Ok(shipmentDtos);
         }
 
         // GET: api/shipments/5
         [HttpGet("{id}")]
-        public async Task<ActionResult<Shipment>> GetShipment(int id)
+        public async Task<ActionResult<ShipmentDto>> GetShipment(int id)
         {
             var shipment = await _shipmentService.GetShipmentByIdAsync(id);
             if (shipment == null)
             {
                 return NotFound(new { message = $"Shipment with ID {id} not found." });
             }
-            return Ok(shipment);
+            return Ok(shipment.ToDto());
         }
 
         // GET: api/shipments/tracking/DMCO-VN-20260001
         [HttpGet("tracking/{trackingNo}")]
-        public async Task<ActionResult<Shipment>> GetShipmentByTracking(string trackingNo)
+        public async Task<ActionResult<ShipmentDto>> GetShipmentByTracking(string trackingNo)
         {
             var shipment = await _shipmentService.GetShipmentByTrackingNoAsync(trackingNo);
             if (shipment == null)
             {
                 return NotFound(new { message = $"Shipment with tracking number '{trackingNo}' not found." });
             }
-            return Ok(shipment);
+            return Ok(shipment.ToDto());
         }
 
         // POST: api/shipments
         [HttpPost]
-        public async Task<ActionResult<Shipment>> CreateShipment([FromBody] Shipment shipment)
+        public async Task<ActionResult<ShipmentDto>> CreateShipment([FromBody] ShipmentCreateDto dto)
         {
             if (!ModelState.IsValid)
             {
@@ -60,8 +63,14 @@ namespace SmartLogix.WebApi.Controllers
 
             try
             {
-                var createdShipment = await _shipmentService.CreateShipmentAsync(shipment);
-                return CreatedAtAction(nameof(GetShipment), new { id = createdShipment.Id }, createdShipment);
+                var shipmentEntity = dto.ToEntity();
+                var createdShipment = await _shipmentService.CreateShipmentAsync(shipmentEntity);
+                
+                // Fetch the fully loaded shipment with Route and Customer populated for UI rendering
+                var fullyLoadedShipment = await _shipmentService.GetShipmentByIdAsync(createdShipment.Id);
+                var responseDto = fullyLoadedShipment?.ToDto() ?? createdShipment.ToDto();
+                
+                return CreatedAtAction(nameof(GetShipment), new { id = createdShipment.Id }, responseDto);
             }
             catch (System.Exception ex)
             {
@@ -71,9 +80,9 @@ namespace SmartLogix.WebApi.Controllers
 
         // PUT: api/shipments/5
         [HttpPut("{id}")]
-        public async Task<IActionResult> UpdateShipment(int id, [FromBody] Shipment shipment)
+        public async Task<IActionResult> UpdateShipment(int id, [FromBody] ShipmentUpdateDto dto)
         {
-            if (id != shipment.Id)
+            if (id != dto.Id)
             {
                 return BadRequest(new { message = "ID mismatch in request." });
             }
@@ -83,10 +92,17 @@ namespace SmartLogix.WebApi.Controllers
                 return BadRequest(ModelState);
             }
 
-            var updated = await _shipmentService.UpdateShipmentAsync(shipment);
+            var existingShipment = await _shipmentService.GetShipmentByIdAsync(id);
+            if (existingShipment == null)
+            {
+                return NotFound(new { message = $"Shipment with ID {id} not found." });
+            }
+
+            dto.UpdateEntity(existingShipment);
+            var updated = await _shipmentService.UpdateShipmentAsync(existingShipment);
             if (!updated)
             {
-                return NotFound(new { message = $"Shipment with ID {id} not found or no changes made." });
+                return BadRequest(new { message = "Failed to update shipment. No changes were made or a database error occurred." });
             }
 
             return NoContent();

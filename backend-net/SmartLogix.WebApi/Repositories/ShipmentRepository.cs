@@ -18,6 +18,7 @@ namespace SmartLogix.WebApi.Repositories
         public async Task<IEnumerable<Shipment>> GetAllAsync()
         {
             return await _context.Shipments
+                .AsNoTracking()
                 .Include(s => s.Customer)
                 .Include(s => s.Route)
                 .Include(s => s.RiskScores)
@@ -28,6 +29,7 @@ namespace SmartLogix.WebApi.Repositories
         public async Task<Shipment?> GetByIdAsync(int id)
         {
             return await _context.Shipments
+                .AsNoTracking()
                 .Include(s => s.Customer)
                 .Include(s => s.Route)
                 .Include(s => s.RiskScores)
@@ -37,6 +39,7 @@ namespace SmartLogix.WebApi.Repositories
         public async Task<Shipment?> GetByTrackingNoAsync(string trackingNo)
         {
             return await _context.Shipments
+                .AsNoTracking()
                 .Include(s => s.Customer)
                 .Include(s => s.Route)
                 .Include(s => s.RiskScores)
