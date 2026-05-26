@@ -15,6 +15,12 @@ import {
 } from 'chart.js'
 import { Bar } from 'vue-chartjs'
 import type { Shipment } from '../../types'
+import { 
+  DELAY_TREND_MONTHS, 
+  DELAY_TREND_MONTH_NUMS, 
+  DELAY_TREND_DEFAULT_TOTALS, 
+  DELAY_TREND_DEFAULT_RATIOS 
+} from '../../constants/mockData'
 
 ChartJS.register(
   CategoryScale,
@@ -49,24 +55,20 @@ onUnmounted(() => {
 })
 
 // Derive monthly buckets from live shipment data
-const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun']
-const MONTH_NUMS = [1, 2, 3, 4, 5, 6] // 2026
-
 const monthlyTotals = computed(() => {
   const counts = Array(6).fill(0)
   for (const s of props.shipments) {
     const d = new Date(s.createdAt)
     const m = d.getMonth() + 1 // 1-based
-    const idx = MONTH_NUMS.indexOf(m)
+    const idx = DELAY_TREND_MONTH_NUMS.indexOf(m)
     if (idx !== -1) counts[idx]++
   }
-  return counts.map((c, i) => c > 0 ? c : [4, 6, 5, 8, 7, 10][i])
+  return counts.map((c, i) => c > 0 ? c : DELAY_TREND_DEFAULT_TOTALS[i])
 })
 
 const monthlyDelays = computed(() =>
   monthlyTotals.value.map((total, i) => {
-    const delayRatios = [0.25, 0.30, 0.28, 0.35, 0.32, 0.38]
-    return Math.round(total * delayRatios[i])
+    return Math.round(total * DELAY_TREND_DEFAULT_RATIOS[i])
   })
 )
 
@@ -75,7 +77,7 @@ const chartData = computed<ChartData<'bar'>>(() => {
   const barBorder = isDark.value ? 'rgba(226, 232, 240, 0.25)' : 'rgba(25, 26, 25, 0.25)'
   
   return {
-    labels: MONTHS,
+    labels: DELAY_TREND_MONTHS,
     datasets: [
       {
         type: 'bar' as const,
@@ -125,7 +127,7 @@ const chartOptions = computed(() => {
         position: 'top' as const,
         align: 'end' as const,
         labels: {
-          font: { family: 'Inter', size: 10, weight: '700' as const },
+          font: { family: 'Inter', size: 14, weight: '700' as const },
           color: textSecondaryColor,
           boxWidth: 8,
           boxHeight: 8,
@@ -138,8 +140,8 @@ const chartOptions = computed(() => {
         backgroundColor: tooltipBg,
         titleColor: textPrimaryColor,
         bodyColor: textPrimaryColor,
-        titleFont: { family: 'Inter', size: 11, weight: '700' as const },
-        bodyFont: { family: 'Inter', size: 11 },
+        titleFont: { family: 'Inter', size: 14, weight: '700' as const },
+        bodyFont: { family: 'Inter', size: 14 },
         padding: 10,
         cornerRadius: 8,
         borderColor: gridLineColor,
@@ -154,7 +156,7 @@ const chartOptions = computed(() => {
         grid: { display: false },
         border: { color: gridLineColor },
         ticks: {
-          font: { family: 'Inter', size: 10, weight: '700' as const },
+          font: { family: 'Inter', size: 14, weight: '700' as const },
           color: textSecondaryColor
         }
       },
@@ -163,7 +165,7 @@ const chartOptions = computed(() => {
         grid: { color: gridLineColor },
         border: { display: false },
         ticks: {
-          font: { family: 'Inter', size: 10 },
+          font: { family: 'Inter', size: 14 },
           color: textSecondaryColor,
           precision: 0
         }
@@ -179,10 +181,10 @@ const chartOptions = computed(() => {
     <div class="flex items-start justify-between mb-5">
       <div>
         <h3 class="text-sm font-black text-text-primary tracking-wide">Monthly Delay Trend</h3>
-        <p class="text-[10px] text-text-secondary mt-0.5 font-medium">Total vs. delayed shipments — Jan to Jun 2026</p>
+        <p class="text-sm text-text-secondary mt-0.5 font-medium">Total vs. delayed shipments — Jan to Jun 2026</p>
       </div>
       <!-- Legend indicator -->
-      <div class="flex items-center gap-3 text-[9px] font-extrabold text-text-secondary select-none font-mono">
+      <div class="flex items-center gap-3 text-sm font-extrabold text-text-secondary select-none font-mono">
         <span class="flex items-center gap-1.5">
           <span 
             class="w-2.5 h-2.5 rounded-sm bg-brand-panel border border-brand-border inline-block"
@@ -190,6 +192,7 @@ const chartOptions = computed(() => {
           ></span>
           Total
         </span>
+
         <span class="flex items-center gap-1.5">
           <span class="w-2.5 h-2.5 rounded-full bg-amber-500 inline-block animate-pulse"></span>
           Delayed

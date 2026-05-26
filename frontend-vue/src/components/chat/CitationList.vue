@@ -13,7 +13,7 @@ defineProps<Props>()
 <template>
   <div class="space-y-2 mt-2 w-full">
     <!-- Sources label -->
-    <div class="flex items-center gap-1.5 text-[9px] font-extrabold uppercase tracking-widest text-text-secondary">
+    <div class="flex items-center gap-1.5 text-sm font-extrabold uppercase tracking-widest text-text-secondary">
       <BookOpen class="w-3.5 h-3.5 text-brand-accent" />
       <span>Sources & References</span>
     </div>
@@ -33,19 +33,19 @@ defineProps<Props>()
         <div class="flex items-center justify-between gap-1.5 mb-1.5 border-b border-brand-border/30 pb-1">
           <div class="flex items-center gap-1.5 min-w-0">
             <span 
-              class="w-3.5 h-3.5 rounded-full text-[9px] font-bold flex items-center justify-center font-mono transition-colors duration-300"
+              class="w-3.5 h-3.5 rounded-full text-sm font-bold flex items-center justify-center font-mono transition-colors duration-300"
               :class="hoveredIndex === idx + 1 ? 'bg-brand-accent text-white' : 'bg-brand-panel text-brand-accent'"
             >
               {{ idx + 1 }}
             </span>
-            <span class="text-[9px] font-bold text-text-primary truncate font-mono">{{ c.source }}</span>
+            <span class="text-sm font-bold text-text-primary truncate font-mono">{{ c.source }}</span>
           </div>
-          <span class="text-[8px] text-text-secondary uppercase font-bold tracking-wider shrink-0 font-mono">
+          <span class="text-sm text-text-secondary uppercase font-bold tracking-wider shrink-0 font-mono">
             RAG Match
           </span>
         </div>
         <!-- Snippet content preview -->
-        <p class="text-[10px] text-text-secondary line-clamp-2 leading-relaxed italic group-hover:text-text-primary transition-colors">
+        <p class="text-sm text-text-secondary line-clamp-2 leading-relaxed italic group-hover:text-text-primary transition-colors">
           "{{ c.content_snippet }}"
         </p>
       </div>

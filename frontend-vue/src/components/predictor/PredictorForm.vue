@@ -28,13 +28,13 @@ const form = defineModel<PredictionInput>({ required: true })
       <h2 class="text-xl font-black text-text-primary flex items-center gap-2">
         <Compass class="w-5.5 h-5.5 text-brand-accent animate-spin-slow" /> AI Risk Profiler
       </h2>
-      <p class="text-text-secondary text-xs mt-1">Configure shipment attributes to run XGBoost diagnostics.</p>
+      <p class="text-text-secondary text-sm mt-1">Configure shipment attributes to run XGBoost diagnostics.</p>
     </div>
 
     <!-- Info alert if shipment context is loaded -->
     <div 
       v-if="trackingNo" 
-      class="bg-brand-panel border border-brand-border rounded-xl p-3.5 flex gap-3 text-xs text-text-secondary"
+      class="bg-brand-panel border border-brand-border rounded-xl p-3.5 flex gap-3 text-sm text-text-secondary"
     >
       <Info class="w-4.5 h-4.5 text-brand-accent shrink-0 mt-0.5" />
       <div>
@@ -74,10 +74,10 @@ const form = defineModel<PredictionInput>({ required: true })
       <!-- Weather Index -->
       <div class="space-y-1.5 select-none">
         <div class="flex justify-between items-center">
-          <label class="text-[10px] font-bold uppercase tracking-wider text-text-secondary flex items-center gap-1.5">
+          <label class="text-sm font-bold uppercase tracking-wider text-text-secondary flex items-center gap-1.5">
             <CloudRain class="w-3.5 h-3.5 text-text-secondary/70" /> Weather severity index
           </label>
-          <span class="text-[10px] font-bold text-text-primary font-mono bg-brand-panel border border-brand-border px-2 py-0.5 rounded">
+          <span class="text-sm font-bold text-text-primary font-mono bg-brand-panel border border-brand-border px-2 py-0.5 rounded">
             {{ form.weather_index.toFixed(1) }} / 5.0
           </span>
         </div>
@@ -89,7 +89,7 @@ const form = defineModel<PredictionInput>({ required: true })
           step="0.1" 
           class="w-full h-1 bg-brand-border rounded-lg appearance-none cursor-pointer accent-brand-accent"
         />
-        <div class="flex justify-between text-[8px] text-text-secondary/70 font-bold px-1 mt-1 font-mono">
+        <div class="flex justify-between text-sm text-text-secondary/70 font-bold px-1 mt-1 font-mono">
           <span>Optimal</span>
           <span>Moderate</span>
           <span>Severe Risk</span>

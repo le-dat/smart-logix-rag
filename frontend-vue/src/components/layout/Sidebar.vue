@@ -103,7 +103,7 @@ const toggleSidebar = () => {
         class="flex items-center justify-center cursor-pointer transition-all duration-200"
         :class="isCollapsed 
           ? 'h-9 w-9 rounded-full bg-brand-accent text-white hover:bg-emerald-600 shadow-sm shadow-emerald-500/20' 
-          : 'btn-capsule-primary py-2.5 px-4 text-xs tracking-wider uppercase flex gap-2 font-bold w-full shadow-md shadow-brand-accent/5'"
+          : 'btn-capsule-primary py-2.5 px-4 text-sm tracking-wider uppercase flex gap-2 font-bold w-full shadow-md shadow-brand-accent/5'"
         :title="isCollapsed ? 'New Thread' : ''"
       >
         <Plus class="w-4.5 h-4.5 shrink-0" />
@@ -119,7 +119,7 @@ const toggleSidebar = () => {
           class="block"
         >
           <span 
-            class="flex items-center rounded-lg text-xs font-bold uppercase tracking-wider transition-all duration-200"
+            class="flex items-center rounded-lg text-sm font-bold uppercase tracking-wider transition-all duration-200"
             :class="[
               isActive 
                 ? 'bg-card-bg text-text-primary border border-brand-border shadow-sm' 
@@ -140,7 +140,7 @@ const toggleSidebar = () => {
           class="block"
         >
           <span 
-            class="flex items-center rounded-lg text-xs font-bold uppercase tracking-wider transition-all duration-200"
+            class="flex items-center rounded-lg text-sm font-bold uppercase tracking-wider transition-all duration-200"
             :class="[
               isActive 
                 ? 'bg-card-bg text-text-primary border border-brand-border shadow-sm' 
@@ -161,7 +161,7 @@ const toggleSidebar = () => {
           class="block"
         >
           <span 
-            class="flex items-center rounded-lg text-xs font-bold uppercase tracking-wider transition-all duration-200"
+            class="flex items-center rounded-lg text-sm font-bold uppercase tracking-wider transition-all duration-200"
             :class="[
               isActive 
                 ? 'bg-card-bg text-text-primary border border-brand-border shadow-sm' 
@@ -187,7 +187,7 @@ const toggleSidebar = () => {
         <button 
           @click="toggleTheme"
           class="h-8 rounded-lg flex items-center justify-center border border-brand-border bg-card-bg cursor-pointer hover:border-brand-accent transition-colors"
-          :class="isCollapsed ? 'w-8' : 'w-full gap-2 text-xs font-semibold text-text-secondary hover:text-text-primary'"
+          :class="isCollapsed ? 'w-8' : 'w-full gap-2 text-sm font-semibold text-text-secondary hover:text-text-primary'"
           :title="isDark ? 'Switch to Light Mode' : 'Switch to Dark Mode'"
         >
           <Sun v-if="isDark" class="w-4 h-4 text-amber-500 animate-in spin-in-12 duration-300" />

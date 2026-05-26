@@ -20,14 +20,14 @@ withDefaults(defineProps<Props>(), {
         <slot name="icon" />
       </div>
       <span 
-        class="text-[9px] font-black uppercase tracking-wider py-0.5 px-2 rounded-full border border-brand-border/60"
+        class="text-sm font-black uppercase tracking-wider py-0.5 px-2 rounded-full border border-brand-border/60"
         :class="badgeClass"
       >
         {{ badgeText }}
       </span>
     </div>
     <div class="mt-4">
-      <h3 class="text-text-secondary text-[10px] font-black uppercase tracking-widest font-mono">
+      <h3 class="text-text-secondary text-sm font-black uppercase tracking-widest font-mono">
         {{ title }}
       </h3>
       <p class="text-2xl font-black mt-1 text-text-primary">

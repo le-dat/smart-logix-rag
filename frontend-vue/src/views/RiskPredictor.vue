@@ -4,6 +4,7 @@ import { useRoute as useVueRoute, useRouter as useVueRouter } from 'vue-router'
 import { ShieldCheck, ArrowLeft, RefreshCw } from '@lucide/vue'
 import { predictionService } from '../services/predictionService'
 import type { PredictionInput, PredictionResult } from '../types'
+import { simulatePredictFallback } from '../constants/mockData'
 
 // Modular Components
 import PredictorForm from '../components/predictor/PredictorForm.vue'
@@ -63,52 +64,9 @@ const handlePrediction = async () => {
   }
 }
 
-// Resilient fallback estimator based on structural logic
+// Resilient fallback estimator using mockData constant function
 const simulateFallback = () => {
-  let score = 0.15
-  if (form.value.route_id === 4) score += 0.35
-  if (form.value.weather_index > 3.5) score += 0.30
-  if (form.value.weight > 3000) score += 0.15
-  if (form.value.carrier === 'DHL Logistics') score -= 0.05
-  
-  score = Math.min(Math.max(score, 0.05), 0.95)
-  
-  let level = 'Low'
-  if (score > 0.65) level = 'High'
-  else if (score > 0.30) level = 'Medium'
-  
-  const wIdx = form.value.weather_index > 3.5 ? 0.45 : 0.20
-  const rIdx = form.value.route_id === 4 ? 0.35 : 0.15
-  const cIdx = 0.20
-  const wtIdx = 0.15
-  const total = wIdx + rIdx + cIdx + wtIdx
-  
-  const factors: string[] = []
-  if (form.value.weather_index > 3.5) {
-    factors.push('Severe weather indices encountered along flyway routing.')
-  }
-  if (form.value.route_id === 4) {
-    factors.push('Cross-Pacific long-haul routes exhibit higher average congestion indices.')
-  }
-  if (form.value.weight > 2000) {
-    factors.push('Heavy-weight freight requires complex container balancing checks.')
-  }
-  if (factors.length === 0) {
-    factors.push('Standard freight parameters meet optimal seasonal safety profiles.')
-  }
-
-  result.value = {
-    risk_score: score,
-    risk_level: level,
-    contributing_factors: {
-      'weather_index': wIdx / total,
-      'route_id': rIdx / total,
-      'carrier': cIdx / total,
-      'weight': wtIdx / total
-    },
-    is_fallback: true,
-    factors
-  }
+  result.value = simulatePredictFallback(form.value)
   predicted.value = true
 }
 </script>
@@ -125,7 +83,7 @@ const simulateFallback = () => {
       >
         <ArrowLeft class="w-4 h-4" />
       </button>
-      <h2 class="text-xs font-black uppercase tracking-wider font-mono text-text-primary">Back to Dashboard</h2>
+      <h2 class="text-sm font-black uppercase tracking-wider font-mono text-text-primary">Back to Dashboard</h2>
     </div>
 
     <!-- Main Container -->
@@ -151,7 +109,7 @@ const simulateFallback = () => {
             <ShieldCheck class="w-12 h-12 text-brand-accent" />
           </div>
           <h3 class="text-lg font-black text-text-primary">Diagnostics Awaiting Run</h3>
-          <p class="text-text-secondary text-xs leading-relaxed font-medium">
+          <p class="text-text-secondary text-sm leading-relaxed font-medium">
             Select route and shipment attributes on the left panel, and click <span class="text-text-primary font-bold">"Run Diagnostics"</span> to evaluate logistical risks with XGBoost machine learning model.
           </p>
         </div>
@@ -162,7 +120,7 @@ const simulateFallback = () => {
             <RefreshCw class="w-10 h-10" />
           </div>
           <h3 class="text-base font-black text-text-primary">Running XGBoost Inference...</h3>
-          <p class="text-text-secondary text-xs font-semibold font-mono">Extracting feature importance splits from tree nodes.</p>
+          <p class="text-text-secondary text-sm font-semibold font-mono">Extracting feature importance splits from tree nodes.</p>
         </div>
 
         <!-- Result Content -->

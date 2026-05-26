@@ -23,7 +23,7 @@ const md = new MarkdownIt({
 const renderedText = computed(() => {
   const html = md.render(props.message.displayText || '')
   return html.replace(/\[([0-9]+)\]/g, (_, num) => {
-    return `<span class="footnote-ref cursor-help inline-flex items-center justify-center text-[9px] font-black h-4 w-4 rounded-full bg-brand-panel hover:bg-brand-accent hover:text-white border border-brand-border text-brand-accent transition-colors ml-0.5" data-index="${num}">${num}</span>`
+    return `<span class="footnote-ref cursor-help inline-flex items-center justify-center text-sm font-black h-4 w-4 rounded-full bg-brand-panel hover:bg-brand-accent hover:text-white border border-brand-border text-brand-accent transition-colors ml-0.5" data-index="${num}">${num}</span>`
   })
 })
 
@@ -62,7 +62,7 @@ const handleMouseLeave = (event: MouseEvent) => {
     <!-- Message Bubble Container -->
     <div class="max-w-[85%] space-y-1.5 flex flex-col">
       <div 
-        class="rounded-2xl p-4 text-xs leading-relaxed transition-all duration-300"
+        class="rounded-2xl p-4 text-sm leading-relaxed transition-all duration-300"
         :class="message.role === 'user'
           ? 'bg-brand-panel text-text-primary rounded-tr-none border border-brand-border font-semibold shadow-[0_1px_2px_rgba(0,0,0,0.01)]'
           : 'bg-card-bg border border-brand-border text-text-primary rounded-tl-none shadow-sm'"
@@ -90,7 +90,7 @@ const handleMouseLeave = (event: MouseEvent) => {
         <!-- Model provider used tag -->
         <div 
           v-if="message.role === 'assistant' && message.provider" 
-          class="text-[9px] text-text-secondary/70 font-extrabold uppercase tracking-wider mt-3.5 flex items-center gap-1.5 font-mono select-none"
+          class="text-sm text-text-secondary/70 font-extrabold uppercase tracking-wider mt-3.5 flex items-center gap-1.5 font-mono select-none"
         >
           <Layers class="w-3.5 h-3.5 text-brand-accent" /> Powered by {{ message.provider }}
         </div>

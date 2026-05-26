@@ -222,3 +222,15 @@ select:focus-visible {
   opacity: 0;
   transform: translateY(-6px);
 }
+
+/* Guarantee minimum standard font size of 14px */
+.text-xs,
+.text-\[8px\],
+.text-\[9px\],
+.text-\[10px\],
+.text-\[11px\],
+.text-\[12px\],
+.text-\[13px\] {
+  font-size: 14px !important;
+}
+

@@ -25,7 +25,7 @@ const getFeaturePercentage = (val: number) => {
   <div class="space-y-6 select-none">
     <!-- Feature Importance Explainers (Perplexity style dark gray bars) -->
     <div class="space-y-4">
-      <h4 class="text-[9px] font-black uppercase tracking-widest text-text-secondary flex items-center gap-2 font-mono">
+      <h4 class="text-sm font-black uppercase tracking-widest text-text-secondary flex items-center gap-2 font-mono">
         <TrendingUp class="w-4 h-4 text-brand-accent animate-pulse" /> Explainable AI (SHAP Weights)
       </h4>
       
@@ -35,7 +35,7 @@ const getFeaturePercentage = (val: number) => {
           :key="key"
           class="space-y-1.5"
         >
-          <div class="flex justify-between items-center text-xs font-semibold">
+          <div class="flex justify-between items-center text-sm font-semibold">
             <span class="text-text-secondary font-bold">{{ getFeatureLabel(String(key)) }}</span>
             <span class="text-text-primary font-mono font-bold">{{ getFeaturePercentage(val) }}%</span>
           </div>
@@ -52,8 +52,8 @@ const getFeaturePercentage = (val: number) => {
 
     <!-- Trigger Factors -->
     <div class="bg-brand-panel/40 rounded-2xl p-4 border border-brand-border space-y-2.5">
-      <h4 class="text-[9px] font-black uppercase tracking-widest text-text-secondary font-mono">Diagnosis Justifications</h4>
-      <ul class="list-disc pl-4 text-xs text-text-secondary space-y-1.5 leading-relaxed font-medium">
+      <h4 class="text-sm font-black uppercase tracking-widest text-text-secondary font-mono">Diagnosis Justifications</h4>
+      <ul class="list-disc pl-4 text-sm text-text-secondary space-y-1.5 leading-relaxed font-medium">
         <li v-for="(f, i) in factors" :key="i" class="marker:text-brand-accent">{{ f }}</li>
       </ul>
     </div>

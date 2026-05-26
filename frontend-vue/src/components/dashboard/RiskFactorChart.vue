@@ -12,6 +12,7 @@ import {
 } from 'chart.js'
 import { Bar } from 'vue-chartjs'
 import type { Shipment } from '../../types'
+import { RISK_FEATURE_CONFIG, RISK_FEATURE_DEFAULT_WEIGHTS } from '../../constants/mockData'
 
 ChartJS.register(CategoryScale, LinearScale, BarElement, Title, Tooltip, Legend)
 
@@ -35,43 +36,11 @@ onUnmounted(() => {
   window.removeEventListener('theme-changed', handleThemeChange as EventListener)
 })
 
-// Derive feature importance from live risk distribution
-const featureConfig = [
-  {
-    label: 'Weather Index',
-    key: 'weather_index',
-    color: '#ef4444',
-    bgColor: 'rgba(239, 68, 68, 0.12)',
-    description: 'Meteorological disruption along flyways'
-  },
-  {
-    label: 'Route Complexity',
-    key: 'route_id',
-    color: '#f97316',
-    bgColor: 'rgba(249, 115, 22, 0.12)',
-    description: 'Cross-Pacific vs. intra-Asia transit corridors'
-  },
-  {
-    label: 'Cargo Weight',
-    key: 'weight',
-    color: '#eab308',
-    bgColor: 'rgba(234, 179, 8, 0.12)',
-    description: 'Heavy cargo triggers physical inspection gates'
-  },
-  {
-    label: 'Carrier Performance',
-    key: 'carrier',
-    color: '#10b981',
-    bgColor: 'rgba(16, 185, 129, 0.12)',
-    description: 'Historical on-time delivery score by carrier'
-  }
-]
-
 // Compute dynamic weights influenced by live shipment data
 const featureWeights = computed(() => {
   const shipments = props.shipments
   if (shipments.length === 0) {
-    return [38, 29, 18, 15]
+    return RISK_FEATURE_DEFAULT_WEIGHTS
   }
 
   const heavyRatio = shipments.filter(s => s.weight > 2000).length / shipments.length
@@ -86,13 +55,13 @@ const featureWeights = computed(() => {
 })
 
 const chartData = computed<ChartData<'bar'>>(() => ({
-  labels: featureConfig.map(f => f.label),
+  labels: RISK_FEATURE_CONFIG.map(f => f.label),
   datasets: [
     {
       label: 'Feature Importance (%)',
       data: featureWeights.value,
-      backgroundColor: featureConfig.map(f => f.bgColor),
-      borderColor: featureConfig.map(f => f.color),
+      backgroundColor: RISK_FEATURE_CONFIG.map(f => f.bgColor),
+      borderColor: RISK_FEATURE_CONFIG.map(f => f.color),
       borderWidth: 2,
       borderRadius: 6,
       borderSkipped: false
@@ -117,15 +86,15 @@ const chartOptions = computed(() => {
         backgroundColor: tooltipBg,
         titleColor: textPrimaryColor,
         bodyColor: textPrimaryColor,
-        titleFont: { family: 'Inter', size: 11, weight: '700' as const },
-        bodyFont: { family: 'Inter', size: 11 },
+        titleFont: { family: 'Inter', size: 14, weight: '700' as const },
+        bodyFont: { family: 'Inter', size: 14 },
         padding: 10,
         cornerRadius: 8,
         borderColor: gridLineColor,
         borderWidth: 1,
         callbacks: {
           label: (ctx: any) => ` Contribution: ${ctx.formattedValue}%`,
-          afterLabel: (ctx: any) => ` ${featureConfig[ctx.dataIndex]?.description ?? ''}`
+          afterLabel: (ctx: any) => ` ${RISK_FEATURE_CONFIG[ctx.dataIndex]?.description ?? ''}`
         }
       }
     },
@@ -136,7 +105,7 @@ const chartOptions = computed(() => {
         grid: { color: gridLineColor },
         border: { display: false },
         ticks: {
-          font: { family: 'Inter', size: 10 },
+          font: { family: 'Inter', size: 14 },
           color: textSecondaryColor,
           callback: (v: any) => `${v}%`
         }
@@ -145,7 +114,7 @@ const chartOptions = computed(() => {
         grid: { display: false },
         border: { color: gridLineColor },
         ticks: {
-          font: { family: 'Inter', size: 10, weight: '700' as const },
+          font: { family: 'Inter', size: 14, weight: '700' as const },
           color: textPrimaryColor
         }
       }
@@ -159,15 +128,15 @@ const chartOptions = computed(() => {
     <!-- Header -->
     <div class="mb-5">
       <h3 class="text-sm font-black text-text-primary tracking-wide">XGBoost Feature Importance</h3>
-      <p class="text-[10px] text-text-secondary mt-0.5 font-medium">Aggregate SHAP contribution weights — derived from live shipment distribution</p>
+      <p class="text-sm text-text-secondary mt-0.5 font-medium">Aggregate SHAP contribution weights — derived from live shipment distribution</p>
     </div>
 
     <!-- Risk Legend Pills -->
     <div class="flex flex-wrap gap-2 mb-4">
       <span
-        v-for="f in featureConfig"
+        v-for="f in RISK_FEATURE_CONFIG"
         :key="f.key"
-        class="inline-flex items-center gap-1.5 text-[9px] font-extrabold uppercase px-2 py-1 rounded-full border tracking-wider font-mono select-none"
+        class="inline-flex items-center gap-1.5 text-sm font-extrabold uppercase px-2 py-1 rounded-full border tracking-wider font-mono select-none"
         :style="{ color: f.color, borderColor: f.color + '40', backgroundColor: f.bgColor }"
       >
         <span class="w-1.5 h-1.5 rounded-full inline-block" :style="{ backgroundColor: f.color }"></span>

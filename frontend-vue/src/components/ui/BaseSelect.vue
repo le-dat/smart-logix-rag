@@ -26,7 +26,7 @@ const selectId = useId()
     <label 
       v-if="label" 
       :for="selectId"
-      class="block text-[10px] font-bold uppercase tracking-wider text-slate-500"
+      class="block text-sm font-bold uppercase tracking-wider text-slate-500"
     >
       {{ label }}
     </label>
@@ -34,7 +34,7 @@ const selectId = useId()
       :id="selectId"
       v-model="modelValue"
       :disabled="disabled"
-      class="glass-input px-3.5 py-2 w-full text-xs font-semibold cursor-pointer focus:outline-none"
+      class="glass-input px-3.5 py-2 w-full text-sm font-semibold cursor-pointer focus:outline-none"
       :class="{ 'bg-slate-50 text-slate-600 cursor-not-allowed': disabled }"
     >
       <slot>

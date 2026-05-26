@@ -16,6 +16,7 @@ import { chatService } from '../services/chatService'
 import { useTypewriter } from '../composables/useTypewriter'
 import type { Message, Citation } from '../types'
 import ChatMessage from '../components/chat/ChatMessage.vue'
+import { CHAT_SUGGESTIONS, simulateChatFallback } from '../constants/mockData'
 
 // Reactive Chat States
 const messages = ref<Message[]>([])
@@ -55,30 +56,8 @@ onUnmounted(() => {
   window.removeEventListener('reset-chat', resetChat)
 })
 
-// Quick Recommendations List
-const suggestions = [
-  {
-    title: 'Taoyuan Air Clearance average speed',
-    desc: 'Retrieve standard customs manuals for Taipei Taoyuan (TPE) air cargo.',
-    focus: 'Customs',
-    query: 'What is the average customs clearance time at Taoyuan (TPE) and the delay risks?'
-  },
-  {
-    title: 'Diagnose heavy ocean freight delays',
-    desc: 'Verify cross-Pacific shipping rules for machinery above 3,000 kg.',
-    focus: 'Routes',
-    query: 'Analyze risks and delay factors for ocean shipping routes from PVG to LAX.'
-  },
-  {
-    title: 'Review Noi Bai dispatch procedures',
-    desc: 'Check fast-track customs codes at Hanoi Noi Bai (HAN) air ports.',
-    focus: 'Customs',
-    query: 'What are the rules and standard hours for cargo clearance at Noi Bai SGN/HAN?'
-  }
-]
-
 // Clicking recommendation fills prompt and sends immediately
-const handleSuggestionClick = (sug: typeof suggestions[0]) => {
+const handleSuggestionClick = (sug: typeof CHAT_SUGGESTIONS[0]) => {
   promptInput.value = sug.query
   selectedFocus.value = sug.focus
   handleSend()
@@ -146,50 +125,9 @@ const handleSend = async () => {
   }
 }
 
-// offline simulator for safety/offline demonstration
+// offline simulator for safety/offline demonstration using mockData helper
 const simulateFallback = (prompt: string, aiMessage: Message) => {
-  const query = prompt.toLowerCase()
-  let answer = ""
-  let citations: Citation[] = []
-
-  if (selectedFocus.value === 'Customs' || query.includes('customs') || query.includes('clearance') || query.includes('hải quan') || query.includes('taoyuan')) {
-    answer = `Based on Dimerco standard operating procedures for **Air Freight Customs Clearance** [1] and cargo manuals:\n\n1. **Standard Lead Time:** Taoyuan TPE averages **4 to 6 operating hours**; Hanoi Noi Bai HAN averages **8 operating hours** [2] for standard declarations.\n2. **High-Risk Thresholds:** Any cargo weighing more than **3,000 kg** [1] or containing electronics/batteries triggers physical inspection audits, increasing processing volatility by 35%.\n3. **Recommended Preventive Action:** Pre-alert the broker 24 hours prior to landing to prevent manifest registration delays.\n\nWould you like me to cross-examine specific transit schedules?`
-    citations = [
-      {
-        source: 'dimerco_tpe_air_clearance.txt',
-        content_snippet: 'Taoyuan (TPE) standard customs manifest registration takes 4-6 hours. Hanoi (HAN) averages 8 hours for general electronic cargo under 2,000 kg.'
-      },
-      {
-        source: 'dimerco_customs_audits_2026.txt',
-        content_snippet: 'Automatic physical inspection procedures trigger for specialized shipments above 3,000 kg or cargo containing dangerous materials, causing 6-12 hr volatility.'
-      }
-    ]
-  } else if (selectedFocus.value === 'Routes' || query.includes('route') || query.includes('tuyến đường') || query.includes('delay') || query.includes('pvg') || query.includes('lax')) {
-    answer = `Evaluating historical transit logs for the PVG (Shanghai) to LAX (Los Angeles) shipping corridor [1]:\n\n* **Average Flight Duration:** 120 hours (5 days) [2] including airport ground operations.\n* **Delay Multiplier:** Severe weather and terminal ground backlogs add **24-48 hours** [1] to the dispatch timeframe.\n* **Carrier Volatility:** DHL Express holds the highest reliability score on this route at **91%** [2] compared to competitors.\n\nYou can use our XGBoost Risk Predictor tool to evaluate structural delays for your custom route weight.`
-    citations = [
-      {
-        source: 'dimerco_shanghai_la_routing.txt',
-        content_snippet: 'Shanghai Pudong (PVG) to Los Angeles (LAX) experiences high congestion scores during Peak Logistics Season (Q4) adding 24-48 hours average delay.'
-      },
-      {
-        source: 'carrier_on_time_performance_2026.txt',
-        content_snippet: 'Comparative reliability on transpacific runs: DHL Logistics averages 91% on-time threshold, followed by Cathay Pacific Cargo at 82%.'
-      }
-    ]
-  } else {
-    answer = `I searched Dimerco's knowledge repositories [1] in ChromaDB but found no exact matching FAQ. Here is a general RAG overview:\n\n* **Transit Rules:** Air shipping is expedited within 1-3 days globally [1]; sea shipping ranges from 15-30 days.\n* **Recommendation:** Ensure all dispatch packing slips are digitised to avoid manual customs logs and bottlenecks [2].\n\nAsk a follow-up about customs manuals or specific routes to fetch deeper vectors!`
-    citations = [
-      {
-        source: 'dimerco_logistics_general.txt',
-        content_snippet: 'General cargo rules: Standard air transit is scheduled for 1-3 days depending on regional airport infrastructure clearances.'
-      },
-      {
-        source: 'dimerco_digital_declarations_faq.txt',
-        content_snippet: 'Digitizing packing lists reduces manual administrative looping errors by 90% across Taoyuan, Noi Bai, and regional sea ports.'
-      }
-    ]
-  }
-
+  const { answer, citations } = simulateChatFallback(prompt, selectedFocus.value)
   aiMessage.text = answer
   aiMessage.citations = citations
   
@@ -239,7 +177,7 @@ const simulateFallback = (prompt: string, aiMessage: Message) => {
             rows="3"
             required
             @keydown.enter.prevent="handleSend"
-            class="w-full bg-transparent text-xs text-text-primary placeholder-text-secondary/60 focus:outline-none resize-none px-2 pt-1 font-medium leading-relaxed"
+            class="w-full bg-transparent text-sm text-text-primary placeholder-text-secondary/60 focus:outline-none resize-none px-2 pt-1 font-medium leading-relaxed"
           ></textarea>
 
           <!-- Inline Actions toolbar -->
@@ -251,7 +189,7 @@ const simulateFallback = (prompt: string, aiMessage: Message) => {
                 <button 
                   type="button"
                   @click="isFocusDropdownOpen = !isFocusDropdownOpen"
-                  class="flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-brand-border bg-brand-panel text-[10px] font-bold text-text-secondary hover:text-text-primary hover:border-brand-accent transition cursor-pointer select-none"
+                  class="flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-brand-border bg-brand-panel text-sm font-bold text-text-secondary hover:text-text-primary hover:border-brand-accent transition cursor-pointer select-none"
                 >
                   <Globe class="w-3.5 h-3.5 text-brand-accent" />
                   <span>Focus: {{ selectedFocus }}</span>
@@ -265,7 +203,7 @@ const simulateFallback = (prompt: string, aiMessage: Message) => {
                     v-for="focus in ['All', 'Customs', 'Routes']" 
                     :key="focus"
                     @click="selectedFocus = focus; isFocusDropdownOpen = false"
-                    class="w-full text-left px-2.5 py-1.5 text-[10px] font-bold rounded-lg hover:bg-brand-panel hover:text-brand-accent transition flex items-center gap-2 cursor-pointer"
+                    class="w-full text-left px-2.5 py-1.5 text-sm font-bold rounded-lg hover:bg-brand-panel hover:text-brand-accent transition flex items-center gap-2 cursor-pointer"
                     :class="selectedFocus === focus ? 'text-brand-accent bg-brand-accent-glow' : 'text-text-secondary'"
                   >
                     <Globe v-if="focus === 'All'" class="w-3 h-3" />
@@ -281,7 +219,7 @@ const simulateFallback = (prompt: string, aiMessage: Message) => {
                 <button 
                   type="button"
                   @click="isModelDropdownOpen = !isModelDropdownOpen"
-                  class="flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-brand-border bg-brand-panel text-[10px] font-bold text-text-secondary hover:text-text-primary hover:border-brand-accent transition cursor-pointer select-none"
+                  class="flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-brand-border bg-brand-panel text-sm font-bold text-text-secondary hover:text-text-primary hover:border-brand-accent transition cursor-pointer select-none"
                 >
                   <Sparkles class="w-3.5 h-3.5 text-brand-accent" />
                   <span>Model: {{ selectedProvider }}</span>
@@ -295,7 +233,7 @@ const simulateFallback = (prompt: string, aiMessage: Message) => {
                     v-for="provider in ['Claude', 'GPT', 'Gemini', 'MiniMax']" 
                     :key="provider"
                     @click="selectedProvider = provider; isModelDropdownOpen = false"
-                    class="w-full text-left px-2.5 py-1.5 text-[10px] font-bold rounded-lg hover:bg-brand-panel hover:text-brand-accent transition flex items-center gap-2 cursor-pointer"
+                    class="w-full text-left px-2.5 py-1.5 text-sm font-bold rounded-lg hover:bg-brand-panel hover:text-brand-accent transition flex items-center gap-2 cursor-pointer"
                     :class="selectedProvider === provider ? 'text-brand-accent bg-brand-accent-glow' : 'text-text-secondary'"
                   >
                     <Zap class="w-3 h-3" />
@@ -330,20 +268,20 @@ const simulateFallback = (prompt: string, aiMessage: Message) => {
       <!-- Quick Recommendations Grid -->
       <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 w-full mt-6">
         <div 
-          v-for="sug in suggestions" 
+          v-for="sug in CHAT_SUGGESTIONS" 
           :key="sug.title"
           @click="handleSuggestionClick(sug)"
           class="p-3.5 rounded-xl border border-brand-border bg-card-bg hover:border-brand-accent cursor-pointer transition-all duration-300 hover:scale-[1.01] hover:shadow-md flex flex-col justify-between text-left group"
         >
           <div class="space-y-1">
-            <h3 class="text-[11px] font-extrabold text-text-primary tracking-wide line-clamp-1 group-hover:text-brand-accent transition-colors">
+            <h3 class="text-sm font-extrabold text-text-primary tracking-wide line-clamp-1 group-hover:text-brand-accent transition-colors">
               {{ sug.title }}
             </h3>
-            <p class="text-[10px] text-text-secondary leading-relaxed line-clamp-2">
+            <p class="text-sm text-text-secondary leading-relaxed line-clamp-2">
               {{ sug.desc }}
             </p>
           </div>
-          <div class="flex items-center gap-1 mt-3.5 text-[9px] font-bold text-brand-accent font-mono uppercase tracking-wider">
+          <div class="flex items-center gap-1 mt-3.5 text-sm font-bold text-brand-accent font-mono uppercase tracking-wider">
             <span>Ask copilot</span>
             <ArrowRight class="w-3 h-3 transform group-hover:translate-x-1 transition-transform" />
           </div>
@@ -357,11 +295,11 @@ const simulateFallback = (prompt: string, aiMessage: Message) => {
       <div class="flex justify-between items-center border-b border-brand-border/40 pb-4 mb-4 select-none">
         <div class="flex items-center gap-2">
           <MessageSquare class="w-4.5 h-4.5 text-brand-accent" />
-          <h2 class="text-xs font-black uppercase tracking-wider font-mono"> RAG Investigation Thread </h2>
+          <h2 class="text-sm font-black uppercase tracking-wider font-mono"> RAG Investigation Thread </h2>
         </div>
         <button 
           @click="resetChat"
-          class="text-[9px] font-extrabold text-text-secondary hover:text-brand-accent uppercase tracking-wider bg-brand-panel border border-brand-border px-2 py-1 rounded-lg cursor-pointer transition"
+          class="text-sm font-extrabold text-text-secondary hover:text-brand-accent uppercase tracking-wider bg-brand-panel border border-brand-border px-2 py-1 rounded-lg cursor-pointer transition"
         >
           Reset Thread
         </button>
@@ -379,7 +317,7 @@ const simulateFallback = (prompt: string, aiMessage: Message) => {
         />
 
         <!-- Loading streaming indicator -->
-        <div v-if="loading" class="flex items-center gap-3 text-text-secondary text-xs pl-2 select-none animate-pulse">
+        <div v-if="loading" class="flex items-center gap-3 text-text-secondary text-sm pl-2 select-none animate-pulse">
           <RefreshCw class="w-3.5 h-3.5 animate-spin text-brand-accent" />
           <span>Generating context answers from Dimerco manual vector blocks...</span>
         </div>
@@ -393,7 +331,7 @@ const simulateFallback = (prompt: string, aiMessage: Message) => {
             <button 
               type="button"
               @click="isFocusDropdownOpen = !isFocusDropdownOpen"
-              class="flex items-center gap-1 px-2.5 py-1.5 rounded-lg border border-brand-border bg-brand-panel text-[9px] font-bold text-text-secondary select-none shrink-0"
+              class="flex items-center gap-1 px-2.5 py-1.5 rounded-lg border border-brand-border bg-brand-panel text-sm font-bold text-text-secondary select-none shrink-0"
               title="Change search focus"
             >
               <Globe class="w-3 h-3 text-brand-accent" />
@@ -407,7 +345,7 @@ const simulateFallback = (prompt: string, aiMessage: Message) => {
               placeholder="Ask a follow-up query regarding Taoyuan air speeds, customs inspection, or routes..." 
               required
               :disabled="loading"
-              class="flex-grow bg-transparent text-xs text-text-primary placeholder-text-secondary/60 focus:outline-none px-1 py-1 font-medium"
+              class="flex-grow bg-transparent text-sm text-text-primary placeholder-text-secondary/60 focus:outline-none px-1 py-1 font-medium"
             />
 
             <!-- Send button -->
@@ -421,7 +359,7 @@ const simulateFallback = (prompt: string, aiMessage: Message) => {
             </button>
           </form>
         </div>
-        <div class="flex justify-between max-w-3xl mx-auto text-[8px] text-text-secondary/60 font-bold px-3 mt-1.5 font-mono select-none">
+        <div class="flex justify-between max-w-3xl mx-auto text-sm text-text-secondary/60 font-bold px-3 mt-1.5 font-mono select-none">
           <span>Focus filters active: {{ selectedFocus === 'All' ? 'All ChromaDB Vectors' : selectedFocus }}</span>
           <span>Fast RAG Search Active</span>
         </div>

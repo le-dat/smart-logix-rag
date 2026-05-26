@@ -118,7 +118,7 @@ const navigateToPredict = (shipment: Shipment) => {
         <h1 class="text-2xl font-brand font-black tracking-tight text-text-primary">
           Logistics Control Center
         </h1>
-        <p class="text-text-secondary text-xs mt-1">Real-time container logs, tracking, and predictive AI dispatch.</p>
+        <p class="text-text-secondary text-sm mt-1">Real-time container logs, tracking, and predictive AI dispatch.</p>
       </div>
       <div class="flex items-center gap-3">
         <button 
@@ -132,7 +132,7 @@ const navigateToPredict = (shipment: Shipment) => {
         </button>
         <button 
           @click="isAddModalOpen = true" 
-          class="btn-capsule-primary flex items-center gap-2 py-2 px-4 shadow-sm text-xs cursor-pointer select-none font-bold"
+          class="btn-capsule-primary flex items-center gap-2 py-2 px-4 shadow-sm text-sm cursor-pointer select-none font-bold"
         >
           <Plus class="w-4.5 h-4.5 shrink-0" /> Add Shipment
         </button>
@@ -168,11 +168,11 @@ const navigateToPredict = (shipment: Shipment) => {
     <div class="space-y-2 select-none">
       <div class="flex items-baseline gap-2">
         <h2 class="text-base font-brand font-black tracking-tight text-text-primary">Predictive Analytics</h2>
-        <span class="text-[9px] font-black font-mono text-brand-accent bg-brand-panel border border-brand-border px-2.5 py-0.5 rounded-full select-none">
+        <span class="text-sm font-black font-mono text-brand-accent bg-brand-panel border border-brand-border px-2.5 py-0.5 rounded-full select-none">
           Powered by XGBoost + ChromaDB
         </span>
       </div>
-      <p class="text-xs text-text-secondary leading-relaxed font-medium">Live visualization of delay trends and machine-learning feature importance derived from your shipment data.</p>
+      <p class="text-sm text-text-secondary leading-relaxed font-medium">Live visualization of delay trends and machine-learning feature importance derived from your shipment data.</p>
     </div>
 
     <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
