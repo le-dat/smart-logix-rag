@@ -1,7 +1,7 @@
 import { createRouter, createWebHistory } from 'vue-router'
-import Dashboard from '../views/Dashboard.vue'
-import RiskPredictor from '../views/RiskPredictor.vue'
-import AiChatbot from '../views/AiChatbot.vue'
+const Dashboard = () => import('../views/Dashboard.vue')
+const RiskPredictor = () => import('../views/RiskPredictor.vue')
+const AiChatbot = () => import('../views/AiChatbot.vue')
 
 const routes = [
   {

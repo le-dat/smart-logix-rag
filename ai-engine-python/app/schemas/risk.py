@@ -14,3 +14,4 @@ class RiskPredictionResponse(BaseModel):
     risk_score: float = Field(..., description="Inferred delay risk probability (0.0 to 100.0%).")
     risk_level: str = Field(..., description="Risk tier: Low, Medium, High.")
     contributing_factors: Dict[str, float] = Field(..., description="Feature importance mapping showing contributing weights.")
+    is_fallback: bool = Field(False, description="Flag indicating if the prediction fell back to rules due to missing model.")

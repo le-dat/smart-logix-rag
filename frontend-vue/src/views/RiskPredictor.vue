@@ -52,9 +52,10 @@ const predicted = ref(false)
 const error = ref<string | null>(null)
 
 interface PredictResult {
-  risk_score: number
+  risk_score: number // normalized (0.0 to 1.0)
   risk_level: string
-  feature_importance: Record<string, number>
+  contributing_factors: Record<string, number>
+  is_fallback: boolean
   factors: string[]
 }
 
@@ -111,7 +112,17 @@ const handlePrediction = async () => {
       throw new Error('API server returned error status')
     }
     
-    result.value = await response.json()
+    const data = await response.json()
+    // Align with 0.0 - 1.0 internal percentage calculations and expected feature layout
+    result.value = {
+      risk_score: data.risk_score / 100.0,
+      risk_level: data.risk_level,
+      contributing_factors: data.contributing_factors,
+      is_fallback: data.is_fallback,
+      factors: data.is_fallback
+        ? ["Failed to read neural network splits. Rule-based estimates are active."]
+        : Object.keys(data.contributing_factors).map(k => `${k} contributed significantly to this prediction.`)
+    }
     predicted.value = true
   } catch (err: any) {
     console.error(err)
@@ -164,12 +175,13 @@ const simulateFallback = () => {
   result.value = {
     risk_score: score,
     risk_level: level,
-    feature_importance: {
+    contributing_factors: {
       'weather_index': wIdx / total,
       'route_id': rIdx / total,
       'carrier': cIdx / total,
       'weight': wtIdx / total
     },
+    is_fallback: true,
     factors
   }
   
@@ -357,17 +369,27 @@ const getFeaturePercentage = (val: number) => {
 
             <!-- Risk Badge details -->
             <div class="text-center sm:text-left space-y-2">
-              <span 
-                class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider"
-                :class="{
-                  'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20': result.risk_level === 'Low',
-                  'bg-amber-500/10 text-amber-400 border border-amber-500/20': result.risk_level === 'Medium',
-                  'bg-rose-500/10 text-rose-400 border border-rose-500/20': result.risk_level === 'High'
-                }"
-              >
-                <ShieldAlert class="w-3.5 h-3.5" />
-                {{ result.risk_level }} Threat level
-              </span>
+              <div class="flex flex-wrap items-center justify-center sm:justify-start gap-2">
+                <span 
+                  class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider"
+                  :class="{
+                    'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20': result.risk_level === 'Low',
+                    'bg-amber-500/10 text-amber-400 border border-amber-500/20': result.risk_level === 'Medium',
+                    'bg-rose-500/10 text-rose-400 border border-rose-500/20': result.risk_level === 'High'
+                  }"
+                >
+                  <ShieldAlert class="w-3.5 h-3.5" />
+                  {{ result.risk_level }} Threat level
+                </span>
+                
+                <!-- Fallback Warning Indicator -->
+                <span 
+                  v-if="result.is_fallback"
+                  class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider bg-amber-500/10 text-amber-400 border border-amber-500/25 animate-pulse"
+                >
+                  Rule Fallback
+                </span>
+              </div>
               <h3 class="text-xl font-extrabold text-white">Risk Evaluation Matrix</h3>
               <p class="text-slate-400 text-sm">
                 XGBoost classifier mapped safety indicators. Core factors contribute to standard operational metrics.
@@ -383,7 +405,7 @@ const getFeaturePercentage = (val: number) => {
             
             <div class="space-y-3.5">
               <div 
-                v-for="(val, key) in result.feature_importance" 
+                v-for="(val, key) in result.contributing_factors" 
                 :key="key"
                 class="space-y-1.5"
               >

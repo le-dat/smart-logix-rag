@@ -2,6 +2,12 @@ import sys
 import typing
 import logging
 
+from contextlib import asynccontextmanager
+from fastapi import FastAPI
+from fastapi.middleware.cors import CORSMiddleware
+from app.core.config import settings
+from app.api.v1.router import api_router
+
 # Configure structured logging
 logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(name)s - %(levelname)s - %(message)s")
 
@@ -21,17 +27,36 @@ if sys.version_info >= (3, 12):
     except Exception as e:
         print(f"Warning: failed to patch ForwardRef._evaluate: {e}")
 
-from fastapi import FastAPI
-from fastapi.middleware.cors import CORSMiddleware
-from app.core.config import settings
-from app.api.v1.router import api_router
+
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    # Safely preload singletons on startup to prevent thread race conditions under load
+    from app.services.risk_service import risk_service
+    from app.services.rag_service import rag_service
+    
+    logger = logging.getLogger("smartlogix.startup")
+    
+    try:
+        risk_service.load_model_if_needed()
+    except Exception as e:
+        logger.error(f"XGBoost preloading failed: {e}")
+        
+    try:
+        # Pre-ingest faq documents on startup if DB is empty
+        rag_service.ingest_documents()
+    except Exception as e:
+        logger.error(f"RAG auto-ingestion preloading failed: {e}")
+        
+    yield
 
 app = FastAPI(
     title=settings.PROJECT_NAME,
     description="Python FastAPI Service for RAG (ChromaDB) and ML Risk Predictions (XGBoost)",
     version=settings.VERSION,
     docs_url="/docs",
-    redoc_url="/redoc"
+    redoc_url="/redoc",
+    lifespan=lifespan
 )
 
 # Configure CORS

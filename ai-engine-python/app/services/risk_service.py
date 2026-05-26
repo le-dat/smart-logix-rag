@@ -113,7 +113,8 @@ class RiskService:
                 shipment_id=query.shipment_id,
                 risk_score=risk_score,
                 risk_level=risk_tier,
-                contributing_factors=factors
+                contributing_factors=factors,
+                is_fallback=False
             )
             
         except Exception as e:
@@ -149,7 +150,8 @@ class RiskService:
             shipment_id=query.shipment_id,
             risk_score=calculated_probability,
             risk_level=risk_tier,
-            contributing_factors=factors
+            contributing_factors=factors,
+            is_fallback=True
         )
 
 risk_service = RiskService()
