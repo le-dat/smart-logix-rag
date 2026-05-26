@@ -1,0 +1,15 @@
+{
+  "buildCommand": "npm run build",
+  "outputDirectory": "dist",
+  "installCommand": "npm install --frozen-lockfile --prefer-offline",
+  "routes": [
+    {
+      "src": "/api/(.*)",
+      "dest": "https://api.smartlogix.example.com/api/:1"
+    },
+    {
+      "src": "/(.*)",
+      "dest": "/index.html"
+    }
+  ]
+}

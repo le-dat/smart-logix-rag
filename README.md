@@ -1,12 +1,10 @@
-# 🚀 SmartLogix – AI-powered Logistics Operations Hub
+# SmartLogix — AI-powered Logistics Operations Hub
 
 SmartLogix is an enterprise-grade logistics orchestration platform designed to streamline supply chain tasks. It combines a robust **C# .NET 8 Web API Integration Gateway**, a **Python FastAPI AI/ML Engine** (handling RAG search and classical Machine Learning risk predictions), a **MS SQL Server 2022** relational database, and an interactive **Vue 3 + TypeScript Frontend** dashboard.
 
 ---
 
 ## 🏗️ System Architecture
-
-The following diagram illustrates the decoupled, microservices-inspired architecture:
 
 ```mermaid
 graph TD
@@ -53,7 +51,7 @@ graph TD
 
 - [Docker](https://docs.docker.com/get-docker/)
 - [Docker Compose Plugin](https://docs.docker.com/compose/install/)
-- [Node.js (v18+)](https://nodejs.org/) & [NPM](https://www.npmjs.com/) _(for the future Frontend module)_
+- [Node.js (v18+)](https://nodejs.org/) & [pnpm](https://pnpm.io/installation) _(for frontend)_
 
 ### 1. Launch Backend Infrastructure (Docker Compose)
 
@@ -75,14 +73,121 @@ docker compose logs -f
 
 Once containers are launched and healthy, check their availability:
 
-```
-
-### 2. Verify Services are Running
-
-Once containers are launched and healthy, check their availability:
-
 - **.NET 8 Gateway Swagger UI:** [http://localhost:5000/swagger/index.html](http://localhost:5000/swagger/index.html)
 - **.NET Customers API Endpoint:** `curl http://localhost:5000/api/customers`
 - **.NET Shipments API Endpoint:** `curl http://localhost:5000/api/shipments`
 - **Python FastAPI Health Check:** `curl http://localhost:8000/`
+
+### 3. Launch Frontend (Native Host)
+
+```bash
+cd frontend-vue
+pnpm install --frozen-lockfile
+pnpm run dev
 ```
+
+Access the frontend at [http://localhost:5173](http://localhost:5173).
+
+---
+
+## 🌐 Deployment
+
+### Frontend (Vercel)
+
+The Vue 3 frontend is configured for deployment on [Vercel](https://vercel.com).
+
+```bash
+cd frontend-vue
+vercel deploy --prod
+```
+
+Or connect your GitHub repository to Vercel for automatic deployments on every push to `main`.
+
+**Environment Variables for Vercel:**
+```
+VITE_API_NET=https://api.smartlogix.example.com
+VITE_WS_URL=wss://api.smartlogix.example.com/ws
+```
+
+### Backend (Azure App Service / Railway / Render)
+
+The .NET 8 Web API can be deployed to:
+
+- **Azure App Service** — Use the `Dockerfile` at `backend-net/` for containerized deployment
+- **Railway** — Connect your GitHub repo and set environment variables
+- **Render** — Use the provided `Dockerfile`
+
+**Required Environment Variables:**
+```
+ConnectionStrings__DefaultConnection=Server=your-azure-sql-server.database.windows.net;Database=SmartLogixDB;User Id=your-user;Password=your-password;Encrypt=True;
+ASPNETCORE_ENVIRONMENT=Production
+```
+
+### AI Engine (Railway / Render / Hugging Face Spaces)
+
+The Python FastAPI AI Engine can be deployed to:
+
+- **Railway** — Containerized deployment using the provided `Dockerfile`
+- **Render** — Use the `Dockerfile` at `ai-engine-python/`
+- **Hugging Face Spaces** — Requires adapting to Spaces' format
+
+**Required Environment Variables:**
+```
+OPENAI_API_KEY=sk-...
+ANTHROPIC_API_KEY=sk-ant-...
+GOOGLE_API_KEY=...
+CORS_ALLOWED_ORIGINS=https://your-frontend.vercel.app
+```
+
+### Database (Azure SQL / Supabase / Neon)
+
+For production, replace the local Docker MS SQL Server with a managed cloud database:
+
+- **Azure SQL Database** — Recommended for enterprise grade
+- **Supabase Postgres** — Open source alternative
+- **Neon Postgres** — Serverless Postgres
+
+Update the `ConnectionStrings__DefaultConnection` in your backend deployment accordingly.
+
+---
+
+## 🔧 Environment Variables
+
+Copy `.env.example` to `.env` and fill in your values before running locally.
+
+| Variable | Description | Example |
+|----------|-------------|---------|
+| `MSSQL_SA_PASSWORD` | SQL Server SA password | `SmartLogix@SecurePassword2026` |
+| `MSSQL_DB` | Database name | `SmartLogixDB` |
+| `OPENAI_API_KEY` | OpenAI API key for LLM | `sk-...` |
+| `ANTHROPIC_API_KEY` | Anthropic API key for Claude | `sk-ant-...` |
+| `GOOGLE_API_KEY` | Google Gemini API key | `AIza...` |
+| `CORS_ALLOWED_ORIGINS` | Allowed CORS origins | `http://localhost:5173,https://your-frontend.vercel.app` |
+| `ASPNETCORE_ENVIRONMENT` | .NET environment | `Development` or `Production` |
+
+---
+
+## 🧪 CI/CD
+
+This project uses GitHub Actions for continuous integration across all three services:
+
+- **Frontend CI** — Runs on push/PR to `frontend-vue/` — lints, type-checks, and builds
+- **Backend .NET CI** — Runs on push/PR to `backend-net/` — restores, builds, and packages
+- **AI Engine CI** — Runs on push/PR to `ai-engine-python/` — lints, type-checks, and builds Docker image
+
+---
+
+## 📊 Feature Summary
+
+| Feature | Description |
+|---------|-------------|
+| **Dashboard** | Real-time KPIs, shipment list with risk badges, delay trend chart |
+| **AI Chatbot** | RAG-powered logistics Q&A with streaming responses, multi-LLM support |
+| **Risk Predictor** | XGBoost ML model predicting shipment delay risk with feature importance |
+| **JWT Auth** | Secure user authentication at the .NET Gateway layer |
+
+---
+
+## 📝 License
+
+MIT

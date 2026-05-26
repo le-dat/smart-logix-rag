@@ -1,6 +1,8 @@
 import os
 import glob
 import logging
+import asyncio
+from concurrent.futures import ThreadPoolExecutor
 from typing import List, Tuple
 from app.core.config import settings
 from app.schemas.chat import DocumentCitation
@@ -19,12 +21,13 @@ class RAGService:
         self.collection_name = "logistics-faq"
         self._embeddings = None
         self._vectorstore = None
-        
+        self._executor = ThreadPoolExecutor(max_workers=4)
+
     def get_embeddings(self):
         """Initializes and returns the appropriate embedding model based on Settings."""
         if self._embeddings is not None:
             return self._embeddings
-            
+
         if settings.USE_OFFLINE_MODE:
             try:
                 # Load HuggingFace local embedding model
@@ -42,14 +45,14 @@ class RAGService:
         else:
             from langchain_openai import OpenAIEmbeddings
             self._embeddings = OpenAIEmbeddings(openai_api_key=settings.OPENAI_API_KEY)
-            
+
         return self._embeddings
 
     def get_vectorstore(self) -> Chroma:
         """Loads or creates the Chroma persistent vector database."""
         if self._vectorstore is not None:
             return self._vectorstore
-            
+
         embeddings = self.get_embeddings()
         self._vectorstore = Chroma(
             persist_directory=self.persist_directory,
@@ -98,10 +101,19 @@ class RAGService:
             )
             print(f"[RAG] Ingestion completed. Indexed {len(all_splits)} total splits into persistent ChromaDB.")
 
+    def _run_sync(self, fn, *args):
+        """Run a synchronous function in the thread pool."""
+        loop = asyncio.new_event_loop()
+        asyncio.set_event_loop(loop)
+        try:
+            return fn(*args)
+        finally:
+            loop.close()
+
     def query(self, prompt: str, provider: str = "Claude") -> Tuple[str, List[DocumentCitation]]:
         """Retrieves context from ChromaDB and synthesizes an answer using the selected strategy."""
         vectorstore = self.get_vectorstore()
-        
+
         # Safe query block with auto-ingestion trigger
         try:
             results_with_score = vectorstore.similarity_search_with_score(prompt, k=3)
@@ -144,7 +156,7 @@ class RAGService:
             try:
                 from langchain_openai import ChatOpenAI
                 from langchain_core.messages import SystemMessage, HumanMessage
-                
+
                 llm = ChatOpenAI(model="gpt-4o-mini", openai_api_key=settings.OPENAI_API_KEY, timeout=15.0)
                 messages = [
                     SystemMessage(content=(
@@ -175,21 +187,27 @@ class RAGService:
           - {"type": "done"}                                       — terminal signal
         Falls back to a local simulated word-by-word stream when offline.
         """
-        import asyncio
+        loop = asyncio.get_event_loop()
 
-        # Run the synchronous query in a thread to get full answer + citations
-        vectorstore = self.get_vectorstore()
+        # Run the synchronous vector search in a thread pool to avoid blocking the async event loop
         try:
-            results_with_score = vectorstore.similarity_search_with_score(prompt, k=3)
+            results_with_score = await loop.run_in_executor(
+                self._executor,
+                lambda: self.get_vectorstore().similarity_search_with_score(prompt, k=3)
+            )
             if not results_with_score:
                 self.ingest_documents()
-                vectorstore = self.get_vectorstore()
-                results_with_score = vectorstore.similarity_search_with_score(prompt, k=3)
+                results_with_score = await loop.run_in_executor(
+                    self._executor,
+                    lambda: self.get_vectorstore().similarity_search_with_score(prompt, k=3)
+                )
         except Exception as e:
             print(f"[RAG Stream] Vector search failed ({e}), running ingest...")
             self.ingest_documents()
-            vectorstore = self.get_vectorstore()
-            results_with_score = vectorstore.similarity_search_with_score(prompt, k=3)
+            results_with_score = await loop.run_in_executor(
+                self._executor,
+                lambda: self.get_vectorstore().similarity_search_with_score(prompt, k=3)
+            )
 
         citations = []
         context_chunks = []
@@ -226,7 +244,7 @@ class RAGService:
                     )),
                     HumanMessage(content=prompt)
                 ]
-                res = llm.invoke(messages)
+                res = await loop.run_in_executor(self._executor, lambda: llm.invoke(messages))
                 answer = res.content
             except Exception as e:
                 answer = (

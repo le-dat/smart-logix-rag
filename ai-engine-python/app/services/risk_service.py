@@ -101,6 +101,7 @@ class RiskService:
                     "Carrier historical delay ratio": round((delay_val / total) * 100.0, 1)
                 }
             else:
+                # All features have zero contribution - use equal distribution as fallback
                 factors = {
                     "Weather severity index": 20.0,
                     "Chosen Carrier handling capability": 20.0,
@@ -108,6 +109,7 @@ class RiskService:
                     "Baseline route operational risk": 20.0,
                     "Carrier historical delay ratio": 20.0
                 }
+                print("[ML] Warning: All feature contributions are zero. Using equal factor distribution.")
                 
             return RiskPredictionResponse(
                 shipment_id=query.shipment_id,

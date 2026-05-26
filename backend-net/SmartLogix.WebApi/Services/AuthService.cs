@@ -55,7 +55,8 @@ namespace SmartLogix.WebApi.Services
 
         private AuthResponseDto BuildAuthResponse(User user)
         {
-            var jwtKey = _configuration["Jwt:Key"] ?? "SmartLogix_Default_JWT_SecretKey_2026_Must_Be_32_Chars!";
+            var jwtKey = _configuration["Jwt:Key"]
+                ?? throw new InvalidOperationException("JWT:Key configuration is required. Set the JWT_SECRET_KEY environment variable.");
             var jwtIssuer = _configuration["Jwt:Issuer"] ?? "SmartLogixGateway";
             var jwtAudience = _configuration["Jwt:Audience"] ?? "SmartLogixClients";
             var expireHours = int.Parse(_configuration["Jwt:ExpireHours"] ?? "8");

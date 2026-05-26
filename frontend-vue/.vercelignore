@@ -1,0 +1,11 @@
+node_modules
+dist
+src/tests
+*.spec.ts
+*.test.ts
+.env.development
+.env.staging
+.git
+.github
+*.log
+.DS_Store

@@ -176,7 +176,7 @@ namespace SmartLogix.WebApi.Data
                 var adminUser = new User
                 {
                     Username = "admin",
-                    PasswordHash = HashPassword("admin123"),
+                    PasswordHash = HashPassword(Environment.GetEnvironmentVariable("ADMIN_INITIAL_PASSWORD") ?? throw new InvalidOperationException("ADMIN_INITIAL_PASSWORD environment variable is required for first-time setup")),
                     Role = "Admin",
                     CreatedAt = DateTime.UtcNow
                 };

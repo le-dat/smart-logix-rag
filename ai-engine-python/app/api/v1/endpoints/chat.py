@@ -20,7 +20,7 @@ async def ask_chatbot(query: ChatQuery):
             citations=citations
         )
     except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+        raise HTTPException(status_code=500, detail="An internal error occurred. Please try again later.")
 
 
 @router.post("/stream")
@@ -36,7 +36,7 @@ async def stream_chatbot(query: ChatQuery):
             async for chunk in rag_service.stream_query(query.prompt, query.provider or "Claude"):
                 yield f"data: {json.dumps(chunk)}\n\n"
         except Exception as e:
-            yield f"data: {json.dumps({'type': 'error', 'message': str(e)})}\n\n"
+            yield f"data: {json.dumps({'type': 'error', 'message': 'An internal error occurred. Please try again later.'})}\n\n"
 
     return StreamingResponse(
         event_generator(),

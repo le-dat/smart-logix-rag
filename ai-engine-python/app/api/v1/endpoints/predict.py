@@ -14,4 +14,4 @@ async def predict_risk(query: RiskPredictionQuery):
         response = risk_service.predict(query)
         return response
     except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+        raise HTTPException(status_code=500, detail="An internal error occurred. Please try again later.")
