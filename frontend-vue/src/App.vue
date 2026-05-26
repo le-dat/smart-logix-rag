@@ -76,20 +76,6 @@ import {
           </router-link>
         </nav>
       </div>
-
-      <!-- User Profile Badge Bottom (Perplexity style) -->
-      <div class="p-4 border-t border-[#e4e2d8] bg-black/[0.01] flex items-center justify-between">
-        <div class="flex items-center gap-2">
-          <!-- avatar circle -->
-          <div class="h-7 w-7 rounded-full bg-[#1c1b17] text-white flex items-center justify-center font-bold text-xs uppercase shadow-sm">
-            tv
-          </div>
-          <div class="flex flex-col">
-            <span class="text-xs font-bold text-[#1c1b17]">thang van</span>
-            <span class="text-[9px] text-slate-400 font-bold font-mono">Control Center</span>
-          </div>
-        </div>
-      </div>
     </aside>
 
     <!-- Main Content Panel -->
