@@ -15,6 +15,7 @@ namespace SmartLogix.WebApi.Data
         public DbSet<Shipment> Shipments => Set<Shipment>();
         public DbSet<RiskScore> RiskScores => Set<RiskScore>();
         public DbSet<ChatLog> ChatLogs => Set<ChatLog>();
+        public DbSet<User> Users => Set<User>();
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
@@ -79,6 +80,16 @@ namespace SmartLogix.WebApi.Data
                 entity.HasKey(cl => cl.Id);
                 entity.Property(cl => cl.UserId).HasMaxLength(100);
                 entity.Property(cl => cl.LLMProvider).HasMaxLength(50);
+            });
+
+            // Users Table configuration
+            modelBuilder.Entity<User>(entity =>
+            {
+                entity.HasKey(u => u.Id);
+                entity.Property(u => u.Username).IsRequired().HasMaxLength(100);
+                entity.HasIndex(u => u.Username).IsUnique();
+                entity.Property(u => u.PasswordHash).IsRequired();
+                entity.Property(u => u.Role).HasMaxLength(50).HasDefaultValue("User");
             });
         }
     }

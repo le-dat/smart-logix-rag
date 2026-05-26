@@ -1,12 +1,10 @@
-import { apiClient } from './apiClient'
+import { apiClient, API_NET } from './apiClient'
 import type { PredictionInput, PredictionResult } from '../types'
-
-const API_PYTHON = import.meta.env.VITE_API_PYTHON || 'http://localhost:8000'
 
 export const predictionService = {
   async predict(input: PredictionInput): Promise<PredictionResult> {
-    const rawResult = await apiClient.post<any>(`${API_PYTHON}/api/v1/risk/predict`, input)
-    
+    const rawResult = await apiClient.post<any>(`${API_NET}/api/ai/predict`, input)
+
     // Normalize response from server format (risk_score 0-100) to client format (0-1.0)
     return {
       risk_score: rawResult.risk_score / 100.0,
@@ -14,7 +12,7 @@ export const predictionService = {
       contributing_factors: rawResult.contributing_factors,
       is_fallback: rawResult.is_fallback,
       factors: rawResult.is_fallback
-        ? ["Failed to read neural network splits. Rule-based estimates are active."]
+        ? ['Failed to read neural network splits. Rule-based estimates are active.']
         : Object.keys(rawResult.contributing_factors).map(k => `${k} contributed significantly to this prediction.`)
     }
   }

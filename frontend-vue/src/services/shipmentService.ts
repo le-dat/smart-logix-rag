@@ -1,7 +1,6 @@
-import { apiClient } from './apiClient'
+import { apiClient, API_NET } from './apiClient'
 import type { Shipment, Customer, CreateShipmentInput } from '../types'
 
-const API_NET = import.meta.env.VITE_API_NET || 'http://localhost:5000'
 
 export const shipmentService = {
   async getShipments(): Promise<Shipment[]> {

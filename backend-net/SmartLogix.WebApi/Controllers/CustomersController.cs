@@ -1,6 +1,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using SmartLogix.WebApi.DTOs;
 using SmartLogix.WebApi.Models;
@@ -9,6 +10,7 @@ using SmartLogix.WebApi.Services;
 namespace SmartLogix.WebApi.Controllers
 {
     [ApiController]
+    [Authorize]
     [Route("api/[controller]")]
     public class CustomersController : ControllerBase
     {

@@ -166,4 +166,85 @@ class RAGService:
 
         return answer, citations
 
+    async def stream_query(self, prompt: str, provider: str = "Claude"):
+        """
+        Async generator that streams the RAG response as SSE chunks.
+        Each yielded dict has keys:
+          - {"type": "token", "token": "...", "provider": "..."}  — incremental text
+          - {"type": "citations", "citations": [...]}              — source citations
+          - {"type": "done"}                                       — terminal signal
+        Falls back to a local simulated word-by-word stream when offline.
+        """
+        import asyncio
+
+        # Run the synchronous query in a thread to get full answer + citations
+        vectorstore = self.get_vectorstore()
+        try:
+            results_with_score = vectorstore.similarity_search_with_score(prompt, k=3)
+            if not results_with_score:
+                self.ingest_documents()
+                vectorstore = self.get_vectorstore()
+                results_with_score = vectorstore.similarity_search_with_score(prompt, k=3)
+        except Exception as e:
+            print(f"[RAG Stream] Vector search failed ({e}), running ingest...")
+            self.ingest_documents()
+            vectorstore = self.get_vectorstore()
+            results_with_score = vectorstore.similarity_search_with_score(prompt, k=3)
+
+        citations = []
+        context_chunks = []
+        for doc, score in results_with_score:
+            if not doc.page_content.strip():
+                continue
+            source_file = doc.metadata.get("source", "Unknown Document")
+            citations.append({"source": source_file, "content_snippet": doc.page_content})
+            context_chunks.append(doc.page_content)
+
+        context_str = "\n\n".join(context_chunks)
+
+        # Build answer text
+        if settings.USE_OFFLINE_MODE:
+            if not citations:
+                answer = "I'm sorry, I couldn't find relevant logistics policies to answer your question."
+            else:
+                answer = (
+                    f"Based on internal Dimerco operational guidelines, I retrieved the following information:\n\n"
+                    f"{context_str}\n\n"
+                    f"*(Response synthesized offline in compliance with local logistics policies)*"
+                )
+        else:
+            try:
+                from langchain_openai import ChatOpenAI
+                from langchain_core.messages import SystemMessage, HumanMessage
+                llm = ChatOpenAI(model="gpt-4o-mini", openai_api_key=settings.OPENAI_API_KEY, timeout=15.0)
+                messages = [
+                    SystemMessage(content=(
+                        "You are the SmartLogix AI Assistant, a logistics copilot for Dimerco. "
+                        "Synthesize an answer using ONLY the retrieved context below. "
+                        "Be concise, highly professional, and cite rules accurately. "
+                        f"Retrieved Context:\n{context_str}"
+                    )),
+                    HumanMessage(content=prompt)
+                ]
+                res = llm.invoke(messages)
+                answer = res.content
+            except Exception as e:
+                answer = (
+                    f"Failed to connect to online LLM ({e}). "
+                    f"Falling back to local offline synthesis:\n\n{context_str}"
+                )
+
+        # Stream citations first
+        yield {"type": "citations", "citations": citations}
+
+        # Simulate streaming word-by-word with a realistic delay
+        words = answer.split(" ")
+        for i, word in enumerate(words):
+            token = word if i == 0 else " " + word
+            yield {"type": "token", "token": token, "provider": provider}
+            await asyncio.sleep(0.025)  # ~40 words/sec simulated typewriter
+
+        yield {"type": "done"}
+
+
 rag_service = RAGService()

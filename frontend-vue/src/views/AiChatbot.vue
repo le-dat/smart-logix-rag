@@ -25,7 +25,7 @@ const selectedProvider = ref('Claude')
 const loading = ref(false)
 const chatContainer = ref<HTMLElement | null>(null)
 
-// Instantiate our premium typewriter composable
+// Instantiate our premium typewriter composable (used in fallback simulator)
 const { type } = useTypewriter()
 
 // Auto-scroll logic inside viewport
@@ -40,7 +40,7 @@ const scrollToBottom = async () => {
 const handleSend = async () => {
   const prompt = promptInput.value.trim()
   if (!prompt || prompt.length < 2 || prompt.length > 1000) return
-  
+
   const userMsgId = Date.now()
   messages.value.push({
     id: userMsgId,
@@ -49,7 +49,7 @@ const handleSend = async () => {
     displayText: prompt,
     isTyping: false
   })
-  
+
   promptInput.value = ''
   loading.value = true
   scrollToBottom()
@@ -67,29 +67,39 @@ const handleSend = async () => {
   messages.value.push(aiMessage)
 
   try {
-    const data = await chatService.ask(prompt, selectedProvider.value)
-    aiMessage.text = data.response
-    aiMessage.citations = data.citations ?? []
-    
-    // Trigger typewriter effect
-    type(
-      data.response,
-      (_, accumulated) => {
-        aiMessage.displayText = accumulated
+    await chatService.askStream(
+      prompt,
+      selectedProvider.value,
+      // onToken: append each incoming token to displayText
+      (token: string) => {
+        aiMessage.text += token
+        aiMessage.displayText += token
         scrollToBottom()
       },
+      // onCitations: set citations once received
+      (citations: Citation[]) => {
+        aiMessage.citations = citations
+      },
+      // onDone: mark typing finished
       () => {
         aiMessage.isTyping = false
+        loading.value = false
         scrollToBottom()
+      },
+      // onError: fallback to offline simulator
+      (err: string) => {
+        console.error('SSE stream error, running offline simulation fallback.', err)
+        loading.value = false
+        simulateFallback(prompt, aiMessage)
       }
     )
   } catch (err: any) {
     console.error('FastAPI RAG error, running offline simulation fallback.', err)
-    simulateFallback(prompt, aiMessage)
-  } finally {
     loading.value = false
+    simulateFallback(prompt, aiMessage)
   }
 }
+
 
 // offline simulator for safety/offline demonstration
 const simulateFallback = (prompt: string, aiMessage: Message) => {
