@@ -2,6 +2,7 @@ import os
 import glob
 import logging
 import asyncio
+import atexit
 from concurrent.futures import ThreadPoolExecutor
 from typing import List, Tuple, Dict, Any, AsyncGenerator, Optional
 
@@ -60,17 +61,36 @@ class LLMFactory:
     def get_llm(provider: str):
         from langchain_openai import ChatOpenAI
 
-        # Use MiniMax as the default online LLM provider
-        if settings.MINIMAX_API_KEY:
-            logger.info("[RAG] Initializing MiniMax-M2.5 LLM.")
-            return ChatOpenAI(
-                model="MiniMax-M2.5",
-                openai_api_key=settings.MINIMAX_API_KEY,
-                openai_api_base="https://api.minimax.io/v1",
-                timeout=15.0
-            )
+        provider_name = provider.strip().lower()
+
+        # Support MiniMax online LLM synthesis
+        if provider_name == "minimax":
+            if settings.MINIMAX_API_KEY:
+                logger.info("[RAG] Initializing MiniMax-M2.5 LLM.")
+                return ChatOpenAI(
+                    model="MiniMax-M2.5",
+                    openai_api_key=settings.MINIMAX_API_KEY,
+                    openai_api_base="https://api.minimax.io/v1",
+                    timeout=15.0
+                )
+            else:
+                raise ValueError("MINIMAX_API_KEY is not configured for online synthesis.")
         else:
-            raise ValueError("MINIMAX_API_KEY is not configured for online synthesis.")
+            # If user requested another provider but we only have MiniMax configured,
+            # gracefully warn and fallback to MiniMax instead of failing.
+            logger.warning(
+                f"[RAG] Requested provider '{provider}' is not supported under the current local + MiniMax configuration. "
+                f"Gracefully falling back to MiniMax."
+            )
+            if settings.MINIMAX_API_KEY:
+                return ChatOpenAI(
+                    model="MiniMax-M2.5",
+                    openai_api_key=settings.MINIMAX_API_KEY,
+                    openai_api_base="https://api.minimax.io/v1",
+                    timeout=15.0
+                )
+            else:
+                raise ValueError(f"Requested provider '{provider}' is not supported and MINIMAX_API_KEY is missing.")
 
 
 class RAGService:
@@ -82,6 +102,8 @@ class RAGService:
         self._embedding_manager = EmbeddingManager()
         self._vectorstore = None
         self._executor = ThreadPoolExecutor(max_workers=4)
+        # Register executor shutdown with atexit to prevent thread/resource leaks on process exit
+        atexit.register(self._executor.shutdown, wait=False)
 
     def get_embeddings(self):
         """Returns embedding model (delegated to EmbeddingManager)."""
@@ -254,9 +276,17 @@ class RAGService:
         Each yielded dict has keys:
           - {"type": "citations", "citations": [...]}              — source citations
           - {"type": "token", "token": "...", "provider": "..."}  — incremental text
+          - {"type": "step", "step": {...}}                         — agent processing step progress
           - {"type": "done"}                                       — terminal signal
         """
         loop = asyncio.get_event_loop()
+
+        # Step 1: Initialize query processing
+        yield {"type": "step", "step": {"id": 1, "title": "Khởi tạo luồng truy vấn dữ liệu SmartLogix", "icon": "search", "status": "running"}}
+        yield {"type": "step", "step": {"id": 1, "title": "Khởi tạo luồng truy vấn dữ liệu SmartLogix", "icon": "search", "status": "completed"}}
+
+        # Step 2: Database Query
+        yield {"type": "step", "step": {"id": 2, "title": "Đang kết nối và tra cứu dữ liệu ChromaDB", "icon": "db", "status": "running"}}
 
         # Run vector search in a thread pool to avoid blocking the event loop
         try:
@@ -279,7 +309,25 @@ class RAGService:
                 lambda: self.get_vectorstore().similarity_search_with_score(prompt, k=3)
             )
 
+        yield {"type": "step", "step": {"id": 2, "title": "Đang kết nối và tra cứu dữ liệu ChromaDB", "icon": "db", "status": "completed"}}
+
+        # Step 3: Extract relevant context
+        yield {"type": "step", "step": {"id": 3, "title": "Đang trích xuất và đối sánh tài liệu liên quan (RAG Match)", "icon": "insight", "status": "running"}}
         context_str, citations = self._extract_chunks_and_citations(results_with_score)
+        yield {
+            "type": "step",
+            "step": {
+                "id": 3,
+                "title": "Đang trích xuất và đối sánh tài liệu liên quan (RAG Match)",
+                "icon": "insight",
+                "status": "completed",
+                "citations": citations  # Inline RAG matches for this step
+            }
+        }
+
+        # Step 4: Synthesize query & initialize LLM
+        yield {"type": "step", "step": {"id": 4, "title": "Đang phân tích thông tin và khởi chạy mô hình MiniMax-M2.5", "icon": "llm", "status": "running"}}
+        yield {"type": "step", "step": {"id": 4, "title": "Đang phân tích thông tin và khởi chạy mô hình MiniMax-M2.5", "icon": "llm", "status": "completed"}}
 
         # Stream citations first
         yield {"type": "citations", "citations": citations}

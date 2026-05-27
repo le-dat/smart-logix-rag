@@ -58,6 +58,8 @@ class RiskService:
             
         try:
             # 1. Encode Carrier String to Categorical Integer
+            if query.carrier not in self.carrier_mapping:
+                logger.warning(f"[ML] Unknown carrier '{query.carrier}'. Defaulting encoded index to 1 (Express Ocean).")
             carrier_encoded = self.carrier_mapping.get(query.carrier, 1) # Default to Express Ocean index 1
             
             # 2. Build input DataFrame aligning with original training features
@@ -85,7 +87,9 @@ class RiskService:
             else:
                 risk_tier = "High"
                 
-            # 5. Extract Explainable AI (XAI) feature importance attributions
+            # 5. Calculate Simplified Heuristic Feature Importance Attributions
+            # Note: This is a fast heuristic scaling global feature importances by current feature values,
+            # not formal SHAP values, to provide light explainability without dependency overhead.
             importances = self.model.feature_importances_
             
             # Base contributions factoring in feature values

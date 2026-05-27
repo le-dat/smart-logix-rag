@@ -19,7 +19,7 @@ defineProps<Props>()
     </div>
 
     <!-- Perplexity-style Grid of Source Cards -->
-    <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-2.5">
+    <div class="flex flex-col gap-2.5">
       <div 
         v-for="(c, idx) in citations" 
         :key="idx"

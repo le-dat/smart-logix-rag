@@ -1,9 +1,9 @@
 <script setup lang="ts">
-import { ref, computed } from 'vue'
-import { Bot, User, Layers } from '@lucide/vue'
 import MarkdownIt from 'markdown-it'
+import { computed, ref } from 'vue'
 import type { Message } from '../../types'
-import CitationList from './CitationList.vue'
+
+import ResearchSteps from './ResearchSteps.vue'
 
 interface Props {
   message: Message
@@ -19,18 +19,63 @@ const md = new MarkdownIt({
   typographer: true
 })
 
-// Parse citation foot references e.g. [1] into beautiful interactive capsules
-const renderedText = computed(() => {
-  const html = md.render(props.message.displayText || '')
-  return html.replace(/\[([0-9]+)\]/g, (_, num) => {
-    return `<span class="footnote-ref cursor-help inline-flex items-center justify-center text-sm font-black h-4 w-4 rounded-full bg-brand-panel hover:bg-brand-accent hover:text-white border border-brand-border text-brand-accent transition-colors ml-0.5" data-index="${num}">${num}</span>`
+const parsedMessage = computed(() => {
+  const text = props.message.displayText || ''
+  
+  // Extract content inside <think>...</think> (or to the end of string if still streaming)
+  const thinkMatch = text.match(/<think>([\s\S]*?)(?:<\/think>|$)/)
+  
+  let thinkingContent = ''
+  let answerContent = text
+  
+  if (thinkMatch) {
+    thinkingContent = thinkMatch[1].trim()
+    answerContent = text.replace(/<think>[\s\S]*?<\/think>/g, '').trim()
+    
+    // If the assistant is still in the middle of thinking, do not render the empty answer yet
+    if (!text.includes('</think>')) {
+      answerContent = ''
+    }
+  }
+  
+  // Render clean markdown
+  const html = md.render(answerContent)
+  
+  // Post-process footnote citations [1], [2]... into premium styled inline pills
+  const renderedAnswer = html.replace(/\[([0-9]+)\]/g, (_, num) => {
+    const index = Number(num)
+    const citation = props.message.citations?.[index - 1]
+    
+    // Clean citation source (e.g. "dimerco_faq.txt" -> base filename)
+    let sourceName = 'Source'
+    if (citation && citation.source) {
+      sourceName = citation.source.split('/').pop() || citation.source
+      if (sourceName.length > 25) {
+        sourceName = sourceName.slice(0, 22) + '...'
+      }
+    }
+    
+    return `<span class="footnote-pill inline-flex items-center gap-1.5 px-2 py-0.5 mx-0.5 rounded-full text-xs font-black bg-brand-panel hover:bg-brand-accent/20 hover:text-brand-accent border border-brand-border/60 hover:border-brand-accent/80 text-text-secondary transition-all cursor-pointer select-none font-sans" data-index="${index}">${sourceName} <span class="text-brand-accent text-[10px] ml-0.5 font-bold">+${index}</span></span>`
   })
+  
+  return {
+    thinking: thinkingContent,
+    answer: renderedAnswer,
+    isThinking: text.includes('<think>') && !text.includes('</think>')
+  }
 })
 
-// Event delegation to capture mouse hovers on superscript footnotes
+// Event delegation to capture mouse hovers on superscript footnotes or footnote pills
 const handleMouseOver = (event: MouseEvent) => {
   const target = event.target as HTMLElement
-  if (target.classList.contains('footnote-ref')) {
+  const pill = target.closest('.footnote-pill')
+  if (pill) {
+    const idx = pill.getAttribute('data-index')
+    if (idx) {
+      hoveredIndex.value = Number(idx)
+    }
+  } else if (target.classList.contains('footnote-ref')) {
+    // Fallback for legacy [1] superscript footnotes if any
     const idx = target.getAttribute('data-index')
     if (idx) {
       hoveredIndex.value = Number(idx)
@@ -38,12 +83,10 @@ const handleMouseOver = (event: MouseEvent) => {
   }
 }
 
-const handleMouseLeave = (event: MouseEvent) => {
-  const target = event.target as HTMLElement
-  if (target.classList.contains('footnote-ref')) {
-    hoveredIndex.value = null
-  }
+const handleMouseLeave = () => {
+  hoveredIndex.value = null
 }
+
 </script>
 
 <template>
@@ -51,58 +94,45 @@ const handleMouseLeave = (event: MouseEvent) => {
     class="flex items-start gap-3.5 group select-text"
     :class="message.role === 'user' ? 'justify-end' : 'justify-start'"
   >
-    <!-- Bot Avatar -->
-    <div 
-      v-if="message.role === 'assistant'" 
-      class="h-8 w-8 rounded-lg bg-brand-panel text-text-secondary flex items-center justify-center border border-brand-border shrink-0"
-    >
-      <Bot class="w-4.5 h-4.5" />
-    </div>
-
     <!-- Message Bubble Container -->
-    <div class="max-w-[85%] space-y-1.5 flex flex-col">
-      <div 
-        class="rounded-2xl p-4 text-sm leading-relaxed transition-all duration-300"
-        :class="message.role === 'user'
-          ? 'bg-brand-panel text-text-primary rounded-tr-none border border-brand-border font-semibold shadow-[0_1px_2px_rgba(0,0,0,0.01)]'
-          : 'bg-card-bg border border-brand-border text-text-primary rounded-tl-none shadow-sm'"
+    <div 
+      class="w-full space-y-1.5 flex flex-col pt-0.5"
+      :class="message.role === 'user' ? 'ml-auto' : 'mr-auto'"
+    >
+      <div
+        class="p-4 text-sm leading-relaxed transition-all duration-300"
+        :class="message.role === 'user' ? 'ml-auto' : ''"
       >
-        <!-- RAG Citations Section (Assistant replies only) -->
-        <CitationList 
+        <!-- <CitationList 
           v-if="message.role === 'assistant' && message.citations && message.citations.length > 0"
           :citations="message.citations"
           :hovered-index="hoveredIndex"
           class="mb-3 border-b border-brand-border/40 pb-3"
+        /> -->
+
+        <ResearchSteps 
+          v-if="message.role === 'assistant'"
+          :steps="message.steps"
         />
+
+        <!-- <ThinkingAccordion 
+          v-if="parsedMessage.thinking"
+          :thinking="parsedMessage.thinking"
+          :is-thinking="parsedMessage.isThinking"
+        /> -->
 
         <!-- Rendered Text -->
         <div 
-          v-if="message.role === 'assistant'"
+          v-if="message.role === 'assistant' && parsedMessage.answer"
           class="prose-custom break-words" 
-          v-html="renderedText"
+          v-html="parsedMessage.answer"
           @mouseover="handleMouseOver"
           @mouseout="handleMouseLeave"
         ></div>
         
-        <!-- User raw text -->
-        <div v-else class="whitespace-pre-line font-bold tracking-wide">{{ message.displayText }}</div>
-        
-        <!-- Model provider used tag -->
-        <div 
-          v-if="message.role === 'assistant' && message.provider" 
-          class="text-sm text-text-secondary/70 font-extrabold uppercase tracking-wider mt-3.5 flex items-center gap-1.5 font-mono select-none"
-        >
-          <Layers class="w-3.5 h-3.5 text-brand-accent" /> Powered by {{ message.provider }}
-        </div>
+        <div v-else-if="message.role === 'user'" class="whitespace-pre-line font-bold tracking-wide text-right">{{ message.displayText }}</div>
       </div>
     </div>
 
-    <!-- User Avatar -->
-    <div 
-      v-if="message.role === 'user'" 
-      class="h-8 w-8 rounded-lg bg-card-bg border border-brand-border text-text-secondary flex items-center justify-center shrink-0"
-    >
-      <User class="w-4.5 h-4.5" />
-    </div>
   </div>
 </template>

@@ -3,6 +3,14 @@ export interface Citation {
   content_snippet: string
 }
 
+export interface StepInfo {
+  id: number
+  title: string
+  icon: 'search' | 'db' | 'insight' | 'llm'
+  status: 'pending' | 'running' | 'completed'
+  citations?: Citation[] // Optional inline RAG source matches for this step
+}
+
 export interface Message {
   id: number
   role: 'user' | 'assistant'
@@ -12,6 +20,7 @@ export interface Message {
   provider?: string
   citations?: Citation[]
   showCitations?: boolean
+  steps?: StepInfo[] // List of agent research steps
 }
 
 export interface ChatResponse {

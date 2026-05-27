@@ -24,6 +24,12 @@ const emit = defineEmits<{
 
 const searchQuery = defineModel<string>('searchQuery', { default: '' })
 const selectedStatus = defineModel<string>('selectedStatus', { default: 'All' })
+
+// Helper to split and clean route strings, addressing Vue performance best practices
+const getCleanRoute = (routeString: string | undefined, fallback: string): string => {
+  if (!routeString) return fallback
+  return routeString.split('(')[0].trim()
+}
 </script>
 
 <template>
@@ -87,9 +93,9 @@ const selectedStatus = defineModel<string>('selectedStatus', { default: 'All' })
         <!-- Route -->
         <div class="text-sm font-bold text-text-primary flex items-center gap-1.5 flex-wrap">
           <Navigation class="w-3.5 h-3.5 text-text-secondary/60 shrink-0" />
-          {{ shipment.route?.source.split('(')[0] || 'Local' }}
+          {{ getCleanRoute(shipment.route?.source, 'Local') }}
           <span class="text-brand-accent">➔</span>
-          {{ shipment.route?.destination.split('(')[0] || 'Destination' }}
+          {{ getCleanRoute(shipment.route?.destination, 'Destination') }}
           <span class="text-text-secondary font-mono font-normal">({{ shipment.route?.averageDuration || 0 }}h)</span>
         </div>
 
@@ -173,9 +179,9 @@ const selectedStatus = defineModel<string>('selectedStatus', { default: 'All' })
             <td class="py-3 px-5">
               <div class="text-sm font-bold text-text-primary flex items-center gap-1.5">
                 <Navigation class="w-3.5 h-3.5 text-text-secondary/60 shrink-0" />
-                {{ shipment.route?.source.split('(')[0] || 'Local' }}
+                {{ getCleanRoute(shipment.route?.source, 'Local') }}
                 <span class="text-brand-accent font-bold">➔</span>
-                {{ shipment.route?.destination.split('(')[0] || 'Destination' }}
+                {{ getCleanRoute(shipment.route?.destination, 'Destination') }}
               </div>
               <div class="text-sm text-text-secondary mt-0.5 font-mono">Duration: {{ shipment.route?.averageDuration || 0 }} hrs</div>
             </td>

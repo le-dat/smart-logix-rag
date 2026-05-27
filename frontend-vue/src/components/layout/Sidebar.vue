@@ -143,7 +143,6 @@ const toggleSidebar = () => {
         </button>
       </div>
 
-      <!-- New Thread Button (Perplexity Style) -->
       <button 
         @click="handleNewThread"
         class="flex items-center justify-center cursor-pointer transition-all duration-200"

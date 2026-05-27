@@ -1,27 +1,20 @@
 <script setup lang="ts">
-import { ref, nextTick, onMounted, onUnmounted } from 'vue'
-import { 
-  Send, 
-  Sparkles, 
-  Globe, 
-  BookOpen, 
-  Compass, 
-  Paperclip,
-  ArrowRight,
+import {
+  Globe,
   RefreshCw,
-  Zap,
-  MessageSquare
+  Send
 } from '@lucide/vue'
-import { chatService } from '../services/chatService'
-import { useTypewriter } from '../composables/useTypewriter'
-import type { Message, Citation } from '../types'
+import { nextTick, onMounted, onUnmounted, ref } from 'vue'
 import ChatMessage from '../components/chat/ChatMessage.vue'
+import { useTypewriter } from '../composables/useTypewriter'
 import { CHAT_SUGGESTIONS, simulateChatFallback } from '../constants/mockData'
+import { chatService } from '../services/chatService'
+import type { Citation, Message, StepInfo } from '../types'
 
 // Reactive Chat States
 const messages = ref<Message[]>([])
 const promptInput = ref('')
-const selectedProvider = ref('Claude')
+const selectedProvider = ref('MiniMax')
 const selectedFocus = ref('All') // Focus: All, Customs, Routes
 const isModelDropdownOpen = ref(false)
 const isFocusDropdownOpen = ref(false)
@@ -84,44 +77,58 @@ const handleSend = async () => {
   scrollToBottom()
 
   const aiMsgId = Date.now() + 1
-  const aiMessage: Message = {
+  messages.value.push({
     id: aiMsgId,
     role: 'assistant',
     text: '',
     displayText: '',
     isTyping: true,
     provider: selectedProvider.value,
-    citations: []
-  }
-  messages.value.push(aiMessage)
+    citations: [],
+    steps: []
+  })
+
+  const reactiveMessage = messages.value[messages.value.length - 1]
 
   try {
     await chatService.askStream(
       prompt,
       selectedProvider.value,
       (token: string) => {
-        aiMessage.text += token
-        aiMessage.displayText += token
+        reactiveMessage.text += token
+        reactiveMessage.displayText += token
         scrollToBottom()
       },
       (citations: Citation[]) => {
-        aiMessage.citations = citations
+        reactiveMessage.citations = citations
+      },
+      (step: StepInfo) => {
+        if (!reactiveMessage.steps) {
+          reactiveMessage.steps = []
+        }
+        const existingIdx = reactiveMessage.steps.findIndex(s => s.id === step.id)
+        if (existingIdx !== -1) {
+          reactiveMessage.steps[existingIdx] = step
+        } else {
+          reactiveMessage.steps.push(step)
+        }
+        scrollToBottom()
       },
       () => {
-        aiMessage.isTyping = false
+        reactiveMessage.isTyping = false
         loading.value = false
         scrollToBottom()
       },
       (err: string) => {
         console.error('SSE stream error, running offline simulation fallback.', err)
         loading.value = false
-        simulateFallback(prompt, aiMessage)
+        simulateFallback(prompt, reactiveMessage)
       }
     )
   } catch (err: any) {
     console.error('FastAPI RAG error, running offline simulation fallback.', err)
     loading.value = false
-    simulateFallback(prompt, aiMessage)
+    simulateFallback(prompt, reactiveMessage)
   }
 }
 
@@ -147,7 +154,7 @@ const simulateFallback = (prompt: string, aiMessage: Message) => {
 </script>
 
 <template>
-  <div class="h-[calc(100dvh-3.5rem-2.5rem)] md:h-[calc(100vh-6.5rem)] flex flex-col justify-between max-w-5xl mx-auto text-text-primary">
+  <div class="h-[calc(100dvh-3.5rem-2.5rem)] md:h-[calc(100vh-5.2rem)] flex flex-col justify-between max-w-5xl mx-auto text-text-primary">
     
     <!-- EMPTY STATE: Centered Search Home -->
     <div 
@@ -156,15 +163,9 @@ const simulateFallback = (prompt: string, aiMessage: Message) => {
     >
       <!-- Title Heading -->
       <div class="text-center space-y-4 mb-8 select-none">
-        <div class="inline-flex h-12 w-12 rounded-2xl bg-brand-accent/10 border border-brand-accent/20 items-center justify-center text-brand-accent mb-2 shadow-sm animate-pulse">
-          <Sparkles class="w-6 h-6" />
-        </div>
         <h1 class="text-2xl md:text-3xl lg:text-4xl font-brand font-black tracking-tight leading-none text-text-primary">
-          Where logistics intelligence begins.
+          SmartLogix
         </h1>
-        <p class="text-text-secondary text-sm font-medium">
-          Ask questions about customs clearance regulations, Taoyuan/Noi Bai operations, and transpacific schedules.
-        </p>
       </div>
 
       <!-- Centered Prompt Box Container -->
@@ -181,78 +182,7 @@ const simulateFallback = (prompt: string, aiMessage: Message) => {
           ></textarea>
 
           <!-- Inline Actions toolbar -->
-          <div class="flex items-center justify-between border-t border-brand-border/40 pt-3 px-1.5">
-            <div class="flex items-center gap-2">
-              
-              <!-- Focus selector dropdown -->
-              <div class="relative">
-                <button 
-                  type="button"
-                  @click="isFocusDropdownOpen = !isFocusDropdownOpen"
-                  class="flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-brand-border bg-brand-panel text-sm font-bold text-text-secondary hover:text-text-primary hover:border-brand-accent transition cursor-pointer select-none"
-                >
-                  <Globe class="w-3.5 h-3.5 text-brand-accent" />
-                  <span>Focus: {{ selectedFocus }}</span>
-                </button>
-                <div 
-                  v-if="isFocusDropdownOpen" 
-                  class="absolute left-0 bottom-10 w-44 rounded-xl border border-brand-border bg-card-bg p-1.5 shadow-lg z-30 animate-in slide-in-from-bottom-2 duration-150"
-                >
-                  <button 
-                    type="button"
-                    v-for="focus in ['All', 'Customs', 'Routes']" 
-                    :key="focus"
-                    @click="selectedFocus = focus; isFocusDropdownOpen = false"
-                    class="w-full text-left px-2.5 py-1.5 text-sm font-bold rounded-lg hover:bg-brand-panel hover:text-brand-accent transition flex items-center gap-2 cursor-pointer"
-                    :class="selectedFocus === focus ? 'text-brand-accent bg-brand-accent-glow' : 'text-text-secondary'"
-                  >
-                    <Globe v-if="focus === 'All'" class="w-3 h-3" />
-                    <BookOpen v-if="focus === 'Customs'" class="w-3 h-3" />
-                    <Compass v-if="focus === 'Routes'" class="w-3 h-3" />
-                    {{ focus === 'All' ? 'All (FAQ Vector)' : focus }}
-                  </button>
-                </div>
-              </div>
-
-              <!-- Model selector dropdown -->
-              <div class="relative">
-                <button 
-                  type="button"
-                  @click="isModelDropdownOpen = !isModelDropdownOpen"
-                  class="flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-brand-border bg-brand-panel text-sm font-bold text-text-secondary hover:text-text-primary hover:border-brand-accent transition cursor-pointer select-none"
-                >
-                  <Sparkles class="w-3.5 h-3.5 text-brand-accent" />
-                  <span>Model: {{ selectedProvider }}</span>
-                </button>
-                <div 
-                  v-if="isModelDropdownOpen" 
-                  class="absolute left-0 bottom-10 w-40 rounded-xl border border-brand-border bg-card-bg p-1.5 shadow-lg z-30 animate-in slide-in-from-bottom-2 duration-150"
-                >
-                  <button 
-                    type="button"
-                    v-for="provider in ['Claude', 'GPT', 'Gemini', 'MiniMax']" 
-                    :key="provider"
-                    @click="selectedProvider = provider; isModelDropdownOpen = false"
-                    class="w-full text-left px-2.5 py-1.5 text-sm font-bold rounded-lg hover:bg-brand-panel hover:text-brand-accent transition flex items-center gap-2 cursor-pointer"
-                    :class="selectedProvider === provider ? 'text-brand-accent bg-brand-accent-glow' : 'text-text-secondary'"
-                  >
-                    <Zap class="w-3 h-3" />
-                    {{ provider === 'Claude' ? 'Claude 3.5' : provider === 'GPT' ? 'GPT-4o Mini' : provider }}
-                  </button>
-                </div>
-              </div>
-
-              <!-- Attachment indicator (Visual placeholder) -->
-              <button 
-                type="button"
-                title="Attach dispatch papers (FAQ, packing slips)"
-                class="p-2 rounded-lg text-text-secondary hover:text-brand-accent hover:bg-brand-panel transition cursor-pointer"
-              >
-                <Paperclip class="w-3.5 h-3.5" />
-              </button>
-            </div>
-
-            <!-- Submit circular button -->
+          <div class="flex items-center justify-end pt-3 px-1.5">
             <button 
               type="submit" 
               :disabled="loading || promptInput.trim().length < 2"
@@ -266,7 +196,7 @@ const simulateFallback = (prompt: string, aiMessage: Message) => {
       </div>
 
       <!-- Quick Recommendations Grid -->
-      <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 w-full mt-6">
+      <div class="flex flex-col gap-3 w-full mt-6">
         <div 
           v-for="sug in CHAT_SUGGESTIONS" 
           :key="sug.title"
@@ -281,34 +211,16 @@ const simulateFallback = (prompt: string, aiMessage: Message) => {
               {{ sug.desc }}
             </p>
           </div>
-          <div class="flex items-center gap-1 mt-3.5 text-sm font-bold text-brand-accent font-mono uppercase tracking-wider">
-            <span>Ask copilot</span>
-            <ArrowRight class="w-3 h-3 transform group-hover:translate-x-1 transition-transform" />
-          </div>
         </div>
       </div>
     </div>
 
     <!-- ACTIVE STATE: Scrolling Chat Thread & Sticky bottom search bar -->
-    <div v-else class="flex-1 flex flex-col min-h-0 bg-transparent py-4 relative">
-      <!-- Chat Header metadata -->
-      <div class="flex justify-between items-center border-b border-brand-border/40 pb-4 mb-4 select-none">
-        <div class="flex items-center gap-2">
-          <MessageSquare class="w-4.5 h-4.5 text-brand-accent" />
-          <h2 class="text-sm font-black uppercase tracking-wider font-mono"> RAG Investigation Thread </h2>
-        </div>
-        <button 
-          @click="resetChat"
-          class="text-sm font-extrabold text-text-secondary hover:text-brand-accent uppercase tracking-wider bg-brand-panel border border-brand-border px-2 py-1 rounded-lg cursor-pointer transition"
-        >
-          Reset Thread
-        </button>
-      </div>
-
+    <div v-else class="max-w-3xl mx-auto flex-1 flex flex-col min-h-0 bg-transparent py-4 relative">
       <!-- Scrollable Message list -->
       <div 
         ref="chatContainer"
-        class="flex-grow overflow-y-auto space-y-6 pr-2 mb-20 scroll-smooth"
+        class="flex-grow overflow-y-auto space-y-6 mb-16 scroll-smooth"
       >
         <ChatMessage 
           v-for="msg in messages" 
@@ -324,20 +236,9 @@ const simulateFallback = (prompt: string, aiMessage: Message) => {
       </div>
 
       <!-- Floating Sticky bottom search box panel -->
-      <div class="absolute bottom-0 left-0 right-0 p-3 pb-safe bg-brand-bg/85 backdrop-blur-md border-t border-brand-border/40">
+      <div class="absolute bottom-0 left-0 right-0 p-3 pb-safe bg-brand-bg/85 backdrop-blur-md">
         <div class="glass-card rounded-2xl p-2.5 shadow-lg border border-brand-border bg-card-bg max-w-3xl mx-auto">
           <form @submit.prevent="handleSend" class="flex items-center gap-2">
-            <!-- Inline selectors in condensed bottom bar -->
-            <button 
-              type="button"
-              @click="isFocusDropdownOpen = !isFocusDropdownOpen"
-              class="flex items-center gap-1 px-2.5 py-1.5 rounded-lg border border-brand-border bg-brand-panel text-sm font-bold text-text-secondary select-none shrink-0"
-              title="Change search focus"
-            >
-              <Globe class="w-3 h-3 text-brand-accent" />
-              <span>{{ selectedFocus }}</span>
-            </button>
-
             <!-- Text Input -->
             <input 
               v-model="promptInput" 
@@ -359,13 +260,7 @@ const simulateFallback = (prompt: string, aiMessage: Message) => {
             </button>
           </form>
         </div>
-        <div class="flex justify-between max-w-3xl mx-auto text-sm text-text-secondary/60 font-bold px-3 mt-1.5 font-mono select-none">
-          <span>Focus filters active: {{ selectedFocus === 'All' ? 'All ChromaDB Vectors' : selectedFocus }}</span>
-          <span>Fast RAG Search Active</span>
-        </div>
       </div>
-
     </div>
-
   </div>
 </template>

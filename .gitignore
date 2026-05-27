@@ -43,6 +43,7 @@ package-lock.json
 mssql-data/
 *.db
 *.sqlite
+chroma_db
 
 # === Local Environment / Secrets ===
 .env

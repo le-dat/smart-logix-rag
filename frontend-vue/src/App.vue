@@ -25,7 +25,7 @@ const isLoginPage = computed(() => route.name === 'Login')
       <Header />
 
       <!-- Main viewport routing with beautiful transitions -->
-      <main class="flex-grow px-4 py-5 md:p-6 overflow-y-auto relative">
+      <main class="flex-grow px-6 py-3 overflow-y-auto relative">
         <router-view v-slot="{ Component }">
           <transition name="fade" mode="out-in">
             <component :is="Component" />

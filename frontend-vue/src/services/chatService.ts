@@ -1,6 +1,6 @@
 import { API_NET } from './apiClient'
 import { useAuthStore } from '../stores/auth'
-import type { ChatResponse, Citation } from '../types'
+import type { ChatResponse, Citation, StepInfo } from '../types'
 
 export const chatService = {
   /**
@@ -34,6 +34,7 @@ export const chatService = {
     provider: string,
     onToken: (token: string) => void,
     onCitations: (citations: Citation[]) => void,
+    onStep: (step: StepInfo) => void,
     onDone: () => void,
     onError: (err: string) => void
   ): Promise<void> {
@@ -87,6 +88,8 @@ export const chatService = {
               onToken(chunk.token ?? '')
             } else if (chunk.type === 'citations') {
               onCitations(chunk.citations ?? [])
+            } else if (chunk.type === 'step') {
+              onStep(chunk.step)
             } else if (chunk.type === 'done') {
               onDone()
               return
