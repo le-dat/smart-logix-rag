@@ -147,7 +147,7 @@ const simulateFallback = (prompt: string, aiMessage: Message) => {
 </script>
 
 <template>
-  <div class="h-[calc(100vh-6.5rem)] flex flex-col justify-between max-w-5xl mx-auto text-text-primary">
+  <div class="h-[calc(100dvh-3.5rem-2.5rem)] md:h-[calc(100vh-6.5rem)] flex flex-col justify-between max-w-5xl mx-auto text-text-primary">
     
     <!-- EMPTY STATE: Centered Search Home -->
     <div 
@@ -159,7 +159,7 @@ const simulateFallback = (prompt: string, aiMessage: Message) => {
         <div class="inline-flex h-12 w-12 rounded-2xl bg-brand-accent/10 border border-brand-accent/20 items-center justify-center text-brand-accent mb-2 shadow-sm animate-pulse">
           <Sparkles class="w-6 h-6" />
         </div>
-        <h1 class="text-3xl md:text-4xl font-brand font-black tracking-tight leading-none text-text-primary">
+        <h1 class="text-2xl md:text-3xl lg:text-4xl font-brand font-black tracking-tight leading-none text-text-primary">
           Where logistics intelligence begins.
         </h1>
         <p class="text-text-secondary text-sm font-medium">
@@ -324,7 +324,7 @@ const simulateFallback = (prompt: string, aiMessage: Message) => {
       </div>
 
       <!-- Floating Sticky bottom search box panel -->
-      <div class="absolute bottom-2 left-0 right-0 p-3 bg-brand-bg/85 backdrop-blur-md border-t border-brand-border/40">
+      <div class="absolute bottom-0 left-0 right-0 p-3 pb-safe bg-brand-bg/85 backdrop-blur-md border-t border-brand-border/40">
         <div class="glass-card rounded-2xl p-2.5 shadow-lg border border-brand-border bg-card-bg max-w-3xl mx-auto">
           <form @submit.prevent="handleSend" class="flex items-center gap-2">
             <!-- Inline selectors in condensed bottom bar -->

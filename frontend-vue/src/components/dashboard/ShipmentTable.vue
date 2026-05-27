@@ -58,8 +58,89 @@ const selectedStatus = defineModel<string>('selectedStatus', { default: 'All' })
       </div>
     </div>
 
-    <!-- Table View -->
-    <div class="overflow-x-auto">
+    <!-- Mobile Card List (visible below md) -->
+    <div class="md:hidden divide-y divide-brand-border">
+      <div v-if="shipments.length === 0" class="py-10 text-center text-sm font-bold text-text-secondary">
+        No shipments found. Try adjusting your filters.
+      </div>
+      <div
+        v-for="shipment in shipments"
+        :key="shipment.id"
+        class="p-4 space-y-3 bg-card-bg hover:bg-brand-panel/20 transition"
+      >
+        <!-- Tracking + Status -->
+        <div class="flex items-start justify-between gap-2">
+          <span class="font-mono text-sm font-bold text-text-primary tracking-wider flex items-center gap-1.5 min-w-0">
+            <Package class="w-4 h-4 text-text-secondary/70 shrink-0" />
+            <span class="truncate">{{ shipment.trackingNo }}</span>
+          </span>
+          <span
+            class="inline-flex items-center px-2 py-0.5 rounded text-sm font-black uppercase tracking-wider border shrink-0"
+            :class="{
+              'bg-amber-500/10 text-amber-500 border-amber-500/25': shipment.status === 'InTransit',
+              'bg-purple-500/10 text-purple-500 border-purple-500/25': shipment.status === 'CustomsClearance',
+              'bg-emerald-500/10 text-emerald-500 border-emerald-500/25': shipment.status === 'Delivered'
+            }"
+          >{{ shipment.status }}</span>
+        </div>
+
+        <!-- Route -->
+        <div class="text-sm font-bold text-text-primary flex items-center gap-1.5 flex-wrap">
+          <Navigation class="w-3.5 h-3.5 text-text-secondary/60 shrink-0" />
+          {{ shipment.route?.source.split('(')[0] || 'Local' }}
+          <span class="text-brand-accent">➔</span>
+          {{ shipment.route?.destination.split('(')[0] || 'Destination' }}
+          <span class="text-text-secondary font-mono font-normal">({{ shipment.route?.averageDuration || 0 }}h)</span>
+        </div>
+
+        <!-- Sender / Receiver + Weight -->
+        <div class="flex items-center justify-between text-sm">
+          <div>
+            <div class="font-bold text-text-primary">{{ shipment.sender }}</div>
+            <div class="text-text-secondary flex items-center gap-1 mt-0.5">
+              <User class="w-3 h-3 shrink-0" />{{ shipment.receiver }}
+            </div>
+          </div>
+          <div class="text-sm text-text-secondary font-mono">{{ shipment.weight.toLocaleString('en-US') }} kg</div>
+        </div>
+
+        <!-- Risk + Actions -->
+        <div class="flex items-center justify-between pt-1">
+          <div class="flex items-center gap-1.5">
+            <span
+              class="h-2 w-2 rounded-full shadow-sm shrink-0"
+              :class="{
+                'bg-emerald-500 shadow-emerald-500/30': shipment.riskLevel === 'Low',
+                'bg-amber-500 shadow-amber-500/30': shipment.riskLevel === 'Medium',
+                'bg-rose-500 shadow-rose-500/30': shipment.riskLevel === 'High',
+              }"
+            ></span>
+            <span
+              class="text-sm font-black uppercase tracking-wider font-mono"
+              :class="{
+                'text-emerald-500': shipment.riskLevel === 'Low',
+                'text-amber-500': shipment.riskLevel === 'Medium',
+                'text-rose-500': shipment.riskLevel === 'High',
+              }"
+            >{{ shipment.riskLevel }} ({{ Math.round((shipment.riskScore || 0.15) * 100) }}%)</span>
+          </div>
+          <div class="flex items-center gap-2">
+            <button
+              @click="emit('diagnose', shipment)"
+              class="btn-capsule-secondary py-1 px-2.5 text-sm font-bold flex items-center gap-0.5 cursor-pointer shadow-sm select-none"
+            >Diagnose <ArrowUpRight class="w-3 h-3" /></button>
+            <button
+              @click="emit('delete', shipment.id)"
+              class="text-text-secondary hover:text-red-500 p-1.5 rounded-lg hover:bg-brand-panel transition-colors cursor-pointer"
+              aria-label="Delete shipment"
+            ><Trash2 class="w-3.5 h-3.5" /></button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Desktop Table View (hidden below md) -->
+    <div class="hidden md:block overflow-x-auto">
       <table class="w-full text-left border-collapse">
         <thead>
           <tr class="border-b border-brand-border bg-brand-panel text-text-primary text-sm uppercase tracking-widest font-black font-mono">
@@ -76,8 +157,8 @@ const selectedStatus = defineModel<string>('selectedStatus', { default: 'All' })
           <tr v-if="shipments.length === 0" class="text-center text-text-secondary">
             <td colspan="7" class="py-10 text-sm font-bold">No shipments found. Try adjusting your filters.</td>
           </tr>
-          <tr 
-            v-for="shipment in shipments" 
+          <tr
+            v-for="shipment in shipments"
             :key="shipment.id"
             class="hover:bg-brand-panel/20 transition group bg-card-bg text-text-primary"
           >
@@ -112,7 +193,7 @@ const selectedStatus = defineModel<string>('selectedStatus', { default: 'All' })
             </td>
             <!-- Status -->
             <td class="py-3 px-5">
-              <span 
+              <span
                 class="inline-flex items-center px-2 py-0.5 rounded text-sm font-black uppercase tracking-wider border"
                 :class="{
                   'bg-amber-500/10 text-amber-500 border-amber-500/25': shipment.status === 'InTransit',
@@ -126,7 +207,7 @@ const selectedStatus = defineModel<string>('selectedStatus', { default: 'All' })
             <!-- AI Risk -->
             <td class="py-3 px-5">
               <div class="flex items-center gap-1.5">
-                <span 
+                <span
                   class="h-2 w-2 rounded-full shadow-sm"
                   :class="{
                     'bg-emerald-500 shadow-emerald-500/30': shipment.riskLevel === 'Low',
@@ -134,7 +215,7 @@ const selectedStatus = defineModel<string>('selectedStatus', { default: 'All' })
                     'bg-rose-500 shadow-rose-500/30': shipment.riskLevel === 'High',
                   }"
                 ></span>
-                <span 
+                <span
                   class="text-sm font-black uppercase tracking-wider font-mono"
                   :class="{
                     'text-emerald-500': shipment.riskLevel === 'Low',
@@ -149,14 +230,14 @@ const selectedStatus = defineModel<string>('selectedStatus', { default: 'All' })
             <!-- Actions -->
             <td class="py-3 px-5 text-right">
               <div class="flex items-center justify-end gap-2">
-                <button 
-                  @click="emit('diagnose', shipment)" 
+                <button
+                  @click="emit('diagnose', shipment)"
                   class="btn-capsule-secondary py-1 px-2.5 text-sm font-bold flex items-center gap-0.5 cursor-pointer shadow-sm select-none"
                 >
                   Diagnose <ArrowUpRight class="w-3 h-3" />
                 </button>
-                <button 
-                  @click="emit('delete', shipment.id)" 
+                <button
+                  @click="emit('delete', shipment.id)"
                   class="text-text-secondary hover:text-red-500 p-1.5 rounded-lg hover:bg-brand-panel transition-colors cursor-pointer"
                   aria-label="Delete shipment"
                 >

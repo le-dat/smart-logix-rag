@@ -1,13 +1,19 @@
 import json
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, HTTPException, Depends
 from fastapi.responses import StreamingResponse
+
 from app.schemas.chat import ChatQuery, ChatResponse
-from app.services.rag_service import rag_service
+from app.services.rag_service import RAGService
+from app.api.dependencies import get_rag_service
 
 router = APIRouter()
 
+
 @router.post("/", response_model=ChatResponse)
-async def ask_chatbot(query: ChatQuery):
+async def ask_chatbot(
+    query: ChatQuery,
+    rag_service: RAGService = Depends(get_rag_service)
+):
     """
     RAG-powered Logistics Policy Assistant Chatbot (non-streaming).
     Retrieves policy context from ChromaDB and invokes the selected LLM Provider.
@@ -24,7 +30,10 @@ async def ask_chatbot(query: ChatQuery):
 
 
 @router.post("/stream")
-async def stream_chatbot(query: ChatQuery):
+async def stream_chatbot(
+    query: ChatQuery,
+    rag_service: RAGService = Depends(get_rag_service)
+):
     """
     SSE streaming chat endpoint. Yields JSON chunks:
     - {"type": "token", "token": "<chunk>", "provider": "<name>"}
@@ -47,4 +56,3 @@ async def stream_chatbot(query: ChatQuery):
             "X-Accel-Buffering": "no",
         }
     )
-

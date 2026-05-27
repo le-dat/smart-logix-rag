@@ -3,14 +3,18 @@ import json
 import logging
 import pandas as pd
 import numpy as np
-
-# Setup logging redirect
-print = logging.getLogger("smartlogix.ml").info
 import xgboost as xgb
+
 from app.core.config import settings
 from app.schemas.risk import RiskPredictionQuery, RiskPredictionResponse
 
+# Setup standard logger
+logger = logging.getLogger("smartlogix.ml")
+
+
 class RiskService:
+    """Service to load XGBoost classifier model and predict logistics delay risk probabilities."""
+
     def __init__(self):
         self.model_dir = settings.MODEL_RESOURCES_DIR
         self.model_path = os.path.join(self.model_dir, "xgb_risk_model.json")
@@ -25,7 +29,7 @@ class RiskService:
             return
             
         if not os.path.exists(self.model_path) or not os.path.exists(self.mapping_path):
-            print(f"[ML] Warning: Model file or mappings not found under '{self.model_dir}'. Run training script first.")
+            logger.warning(f"[ML] Warning: Model file or mappings not found under '{self.model_dir}'. Run training script first.")
             return
 
         try:
@@ -39,9 +43,9 @@ class RiskService:
                 self.carrier_mapping = mappings.get("carrier_mapping", {})
                 self.features = mappings.get("features", [])
                 
-            print(f"[ML] Successfully loaded pre-trained XGBoost model from {self.model_path}")
+            logger.info(f"[ML] Successfully loaded pre-trained XGBoost model from {self.model_path}")
         except Exception as e:
-            print(f"[ML] Error loading model files: {e}")
+            logger.error(f"[ML] Error loading model files: {e}")
 
     def predict(self, query: RiskPredictionQuery) -> RiskPredictionResponse:
         """Infers the delay risk probability of a shipment using the pre-trained XGBoost model."""
@@ -49,7 +53,7 @@ class RiskService:
         
         # Fallback if model could not be loaded
         if self.model is None:
-            print("[ML] XGBoost model not loaded. Falling back to rule-based prediction.")
+            logger.warning("[ML] XGBoost model not loaded. Falling back to rule-based prediction.")
             return self._predict_fallback(query)
             
         try:
@@ -109,7 +113,7 @@ class RiskService:
                     "Baseline route operational risk": 20.0,
                     "Carrier historical delay ratio": 20.0
                 }
-                print("[ML] Warning: All feature contributions are zero. Using equal factor distribution.")
+                logger.warning("[ML] Warning: All feature contributions are zero. Using equal factor distribution.")
                 
             return RiskPredictionResponse(
                 shipment_id=query.shipment_id,
@@ -120,7 +124,7 @@ class RiskService:
             )
             
         except Exception as e:
-            print(f"[ML] Inference failed: {e}. Falling back to rule-based prediction.")
+            logger.error(f"[ML] Inference failed: {e}. Falling back to rule-based prediction.")
             return self._predict_fallback(query)
 
     def _predict_fallback(self, query: RiskPredictionQuery) -> RiskPredictionResponse:
@@ -156,4 +160,6 @@ class RiskService:
             is_fallback=True
         )
 
+
+# Singleton instance
 risk_service = RiskService()
